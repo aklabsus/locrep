@@ -1,0 +1,230 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа со строками</b></u></font></p>
+<hr>
+<p><b> <font size="4"><a name="#51">Возвращает правый
+сегмент строки с порядковым номером N </a>
+</font><a name="#51"> <font color="#008000">(GetRightSegment)<br>
+</font></a></b> function GetRightSegment(N: Integer; Str: String; SegSep:Char):String;<br>
+&nbsp;&nbsp;&nbsp; N - порядковый номер сегмента<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; SegSep - символ-разделитель
+сегментов.</p>
+<p>Функция возвращает сегмент с порядковым
+номером N (считая с нуля) из строки Str, если
+такого сегмента нет, то&nbsp; функция вернет
+символ, указанный в SegSep.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#52">Возвращает левый
+сегмент строки с порядковым номером N </a>
+</font><a name="#52"> <font color="#008000">(GetLeftSegment)<br>
+</font></a></b> function GetLeftSegment(N: Integer; Str: String; SegSep:Char):String;<br>
+&nbsp;&nbsp;&nbsp; N - порядковый номер сегмента<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; SegSep - символ-разделитель
+сегментов.</p>
+<p>Функция возвращает сегмент с порядковым
+номером N (считая с нуля) из строки Str, если
+такого сегмента нет, то&nbsp; функция вернет
+символ, указанный в SegSep.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#53">Криптует строку </a>
+</font><a name="#53"> <font color="#008000">(CryptString)</font></a></b><a name="#53"><br>
+</a> function CryptString(Str:String):String;<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; Result - зашифорванная строка.</p>
+<p>&nbsp;описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#54">Дешифрует криптованную
+строку </a>
+</font><a name="#54"> <font color="#008000">(UnCryptString)</font></a></b><a name="#54"><br>
+</a>function UnCryptString(Str:String):String;<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; Result - расшифорванная строка.</p>
+<p>&nbsp;описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#55">Проверяет, что в строке
+нет символов с кодом больше #127</a>
+</font><a name="#55"> <font color="#008000"> (IsLat)<br>
+</font></a></b> function IsLat(Str:String):boolean;<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; Result - true, если в строке нет русских
+символов.</p>
+<p>&nbsp;описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#56">Преобразует OEM-&gt;ANSI </a>
+</font><a name="#56"> <font color="#008000">(StrOEMToANSI)<br>
+</font></a></b> function StrOEMToANSI(St:String):String;<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка<br>
+&nbsp;&nbsp;&nbsp; Result - перекодированная строка.</p>
+<p>&nbsp;описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#57">Преобразует ANSI-&gt;OEM </a>
+</font><a name="#57"> <font color="#008000">(StrANSItoOEM)<br>
+</font></a></b> function StrANSItoOEM(St:String):String;<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка<br>
+&nbsp;&nbsp;&nbsp; Result - перекодированная строка.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#58">Возвращает строку,
+разделенную по словам </a>
+</font><a name="#58"> <font color="#008000">(GetStrWords)<br>
+</font></a></b> procedure GetStrWords(St:String; List:TStringList; latonly: boolean =
+true);<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка (слова,
+перечисленные через пробел)<br>
+&nbsp;&nbsp;&nbsp; List - результирующий список. Сюда
+будут добавлены выделенные слова.<br>
+&nbsp;&nbsp;&nbsp; latonly - если true, то функция выделяет
+только слова из латинских букв.<br>
+<br>
+описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#59">Проверяет, чтобы все
+указанные слова существовали в строке на
+небольшом расстоянии друг от друга</a>
+</font><a name="#59"> <font color="#008000" size="4"> (WordsIsNear)<br>
+</font></a></b> function WordsIsNear(St:String; Words:String):boolean;<br>
+<i>Возвращает true, если слова(или части слов),
+перечисленные в Words, встречаются в строке St,
+причем расстояние между ними не более 10
+символов (можно использовать для поиска по
+фразе)<br>
+</i>&nbsp;&nbsp;&nbsp; St - строка, внутри которой будет
+производиться поиск.<br>
+&nbsp;&nbsp;&nbsp; Words - список слов, перечисленных
+через пробел, которые будут искаться в
+строке St.&nbsp;<br>
+&nbsp;&nbsp;&nbsp; result - true, если в строке St есть
+фраза, указанная в Words.<br>
+<br>
+Замечание : для полноценного поиска по
+фразе перед использованием процедуры
+убирайте окончания слов.&nbsp;</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#60">Проверяет, что все
+указанные слова существуют в строке</a>
+</font><a name="#60"> <font color="#008000" size="4"> (WordsIn)<br>
+</font></a></b> function WordsIn(St: String; Words:String):boolean;<br>
+&nbsp;&nbsp;&nbsp; St - строка, внутри которой будет
+производиться поиск.<br>
+&nbsp;&nbsp;&nbsp; Words - список слов, перечисленных
+через пробел, которые будут искаться в
+строке St.<br>
+&nbsp;&nbsp;&nbsp; result - true, если в строке St
+одновременно встречаются все слова,
+перечисленные в Words.&nbsp;</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#61">Удаляет указанные
+символы из строки</a>
+</font><a name="#61"> <font color="#008000" size="4"> (TrimIn)<br>
+</font></a></b> function TrimIn(St:string; rchars: TChars): String;<br>
+&nbsp;&nbsp;&nbsp; Str - исходная строка<br>
+&nbsp;&nbsp;&nbsp; rchars - множество символов,
+подлежащих удалению<br>
+&nbsp;&nbsp;&nbsp; result - строка St, из которой были
+удалены все символы rChars.&nbsp;</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#62">Перобразует текст в
+строку, путем удаления из него всех
+символов #13, #10</a></font><a name="#62"> <font color="#008000" size="4">
+(TextToLine)<br>
+</font></a></b> function TextToLine(St:string): String;<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка, содержащая в
+себе многострочный текст.<br>
+&nbsp;&nbsp;&nbsp; result - содержимое St,
+преобразованная к однострочному виду.</p>
+<p>Преобразует текст в строку, путем
+удаления из него всех символов #13, #10, #9 и
+добавления (в случае необходимости)
+символов &quot;пробел&quot;.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#63">Возвращает инициалы
+имени</a>
+</font><a name="#63"> <font color="#008000" size="4"> (GetNameLT)<br>
+</font></a></b> function GetNameLT(Name:String):String;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; Name - исходная строка (фамилия, имя
+и отчество, прописанные через пробел)<br>
+&nbsp;&nbsp;&nbsp; Result - строка, содержащая инициалы
+имени, указанного в Name. За имя функция
+принимает первое слово строки Name, за
+отчество -&nbsp; второе, а за фамилию -
+последнее.</p>
+<p>&nbsp;описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#64">Возвращает позицию
+первого символа, отличного от Ch</a>
+</font><a name="#64"> <font color="#008000" size="4"> (NotCharPos)<br>
+</font></a></b> function NotCharPos(St:String; ch:Char; StartFrom:Integer = 1):Integer;<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка<br>
+&nbsp;&nbsp;&nbsp; ch - код символа<br>
+&nbsp;&nbsp;&nbsp; StartFrom - указывает с какого символа
+начинать проверку.<br>
+&nbsp;&nbsp;&nbsp; Result -&nbsp; если символа с кодом
+отличным от ch не найдено, то возвращается 0,
+в противном случае -&nbsp; позиция первого
+символа, отличного от Ch.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#65">Возвращает строку, в
+которой все символы c1 заменены на c2. </a>
+</font><a name="#65"> <font color="#008000" size="4">(ReplaceChar)<br>
+</font></a></b> function ReplaceChar(st: String; c1, c2: char):String;<br>
+Работает много быстрее StringReplace.<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка<br>
+&nbsp;&nbsp;&nbsp; c1 - какой символ менять<br>
+&nbsp;&nbsp;&nbsp; c2 - на что менять все символы c1<br>
+&nbsp;&nbsp;&nbsp; Result - строка st, в которой все
+символы c1 заменены на c2.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><b> <font color="#008000" size="4"><br>
+</font> <font size="4"><a name="#66">Разбивает строку на
+подстроки фиксированной длины </a>
+</font><a name="#66"> <font color="#008000" size="4">(WordWrapStr)<br>
+</font></a></b> function WordWrapStr(st:String; len:Integer; first: Integer = 0; next:Integer = 0):String;<br>
+&nbsp;&nbsp;&nbsp; St - исходная строка<br>
+&nbsp;&nbsp;&nbsp; len - максимальная длина подстрок.<br>
+&nbsp;&nbsp;&nbsp; first - отступ от левого края в
+первой строке.<br>
+&nbsp;&nbsp;&nbsp; next - отступ от левого края в
+последующих строках.<br>
+&nbsp;&nbsp;&nbsp; Result - строка st, разбитая на
+подстроки.</p>
+<p>Разбивка производится только на стыках
+слов, однако если слово слишком длинное, то
+оно разобьется &quot;как есть&quot;. Строки
+отделяются друг от друга
+последовательностью символов #13#10</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#67">Ищет последнее
+вхождение указанной подстроки в строку</a> <font color="#008000">
+(PosR)<br>
+</font></b></font> function PosR(Substr: string; S: string; N:Integer = 0):
+Integer;<br>
+<i>Возвращает позицию Nой (начиная с нуля)
+подстроки SubStr в строке S </i>(Проверка идет
+справа налево)<br>
+&nbsp;&nbsp;&nbsp; SubStr - подстрока, позицию которой
+нужно найти<br>
+&nbsp;&nbsp;&nbsp; S - строка в которой будет
+производиться поиск<br>
+&nbsp;&nbsp;&nbsp; N - порядковый номер подстроки (начиная
+с 0)<br>
+&nbsp;&nbsp;&nbsp; result - позиция первого символа
+подстроки SubStr в строке S или 0, если
+подстрока не обнаружена.</p>
+<p>описано : akStrUtils</p>
+<hr noshade color="#0000FF">

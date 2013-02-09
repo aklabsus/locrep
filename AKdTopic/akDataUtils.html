@@ -1,0 +1,55 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с различными
+данными</b></u></font></p>
+<hr>
+<hr noshade color="#0000FF" size="8">
+<p><b><font size="4"><a name="#51">Возвращает порядковый
+номер элемента массива в котором записано
+указанное значение. <font color="#008000">(DataInArray)</font><br>
+</a></font></b>function DataInArray(Data:Integer; Arr: Array of Integer):Integer;
+overload;<br>
+function DataInArray(Data:Boolean; Arr: Array of Boolean):Integer; overload;<br>
+function DataInArray(Data:Double; Arr: Array of Double):Integer; overload;<br>
+function DataInArray(Data:String; Arr: Array of String; IgnoreCase:Boolean):Integer;
+overload;<br>
+function DataInArray(Data:String; Arr: TStrings; IgnoreCase:Boolean):Integer;
+overload;<br>
+&nbsp;&nbsp;&nbsp; Data - искомое значение<br>
+&nbsp;&nbsp;&nbsp; Arr - где искать<br>
+&nbsp;&nbsp;&nbsp; IgonoreCase - если значение Data - строка,
+то установка этого параметра в true приведет
+к поиску строк без учета регистра.<br>
+&nbsp;&nbsp;&nbsp; result - порядковый номер элемента,
+имеющего значение, указанное в Data, либо -1,
+если такого элемента не найдено.</p>
+<p>описано : akDataUtils</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#52">Возвращает число, записанное в
+указанных битах (от..до) <font color="#008000">(GetBits)<br>
+</font>
+</a></b></font>function GetBits(value:Integer; first, last:Byte):DWORD;<br>
+&nbsp;&nbsp;&nbsp; value - исходное число<br>
+&nbsp;&nbsp;&nbsp; first - номер начального бита (0-31)<br>
+&nbsp;&nbsp;&nbsp; last - номер конечного бита (0-31)<br>
+&nbsp;&nbsp;&nbsp; result - значение, хранящееся в битах
+first-last числа value.<br>
+<br>
+описано : akDataUtils</p>
+<hr noshade color="#0000FF">
+<p><b><a name="#53"><font size="4">Считает CRC32 указанной строки
+<font color="#008000">(</font></font></a></b><font color="#008000" size="4">GetStringCRC</font><b><a name="#52"><font color="#008000" size="4">)<br>
+</font>
+</a></b>function GetStringCRC(Str:String) : Cardinal;<br>
+&nbsp;&nbsp;&nbsp; str - строка по данным которой
+считается CRC32.&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; result - CRC32 указанной строки.<br>
+<br>
+частичная реализация :<i> Burnashov Alexander <a href="mailto:(alexburn@metrocom.ru">(alexburn@metrocom.ru</a>)</i><br>
+описано : akDataUtils</p>
+<hr noshade color="#0000FF">

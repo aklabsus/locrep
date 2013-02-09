@@ -1,0 +1,225 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с логами</b></u></font></p>
+<hr>
+<p><b><font size="4"><a name="#1">Как работать с логами в
+моем приложении ?</a></font></b>
+</p>
+<p>В модуле akLogUtils есть класс TFileLog, который
+позволяет не только писать в лог текстовые<br>
+данные, но и использовать его в качестве
+текстового хранилища отчетных данных :
+</p>
+<hr align="left" width="50%" noshade color="#0000FF">
+<p><font color="#008000">// Строка отчета. (сохраненная
+с типом LOG_REPORT)</font><br>
+<a name="#1repitem">   TReportItem</a> = <b>class</b>(TCollectionItem)<br>
+<b>     public<br>
+</b><font color="#008000">&nbsp;&nbsp;&nbsp; // Дата внесения
+данной строки отчета<br>
+</font><b>&nbsp;&nbsp;&nbsp;</b> <b>property</b> RpDate:TDateTime;<br>
+<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Текст строки отчета<br>
+</font><b>&nbsp;&nbsp;&nbsp;</b> <b>property</b> RpDesc:String;<br>
+<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Заполняет TReportItem
+данными. Тест строки указывается в Desc.&nbsp;<br>
+&nbsp;&nbsp;&nbsp; // Время внесения данных
+устанавливается автоматически.</font><br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>procedure</b> SetItem(Desc: String);<br>
+<b>end</b>;
+</p>
+<hr align="left" width="50%" noshade color="#0000FF">
+<p><font color="#008000">// Коллекция строк отчета (<a href="##1repitem">TReportItem</a>).&nbsp;<br>
+// Смотрите помощь по TCollection в Delphi-help.</font><br>
+<a name="#1repcol">TRepCollection </a> = class(TCollection);
+</p>
+<hr align="left" width="50%" noshade color="#0000FF">
+<p><font color="#008000">// Класс для работы с файловыми логами.<br>
+   // Рекомендуется создавать при старте программы и удалять по выходу из нее.</font><br>
+   TFileLog = <b>class</b>(TObject)<br>
+<b>    public<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Создает файловый лог (рекомендуется
+создавать при старте приложения)&nbsp;&nbsp;&nbsp;<b>&nbsp;<br>
+</b>&nbsp;&nbsp;&nbsp; // fn - полное имя имя файла-лога.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>constructor</b> Create(fn:String);&nbsp;<br>
+<b><font color="#008000"><br>
+&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //&nbsp;Удаляет
+файловый лог (рекомендуется удалять при
+выходе из приложения)&nbsp;&nbsp;&nbsp;<b>&nbsp;</b></font><br>
+&nbsp;&nbsp;&nbsp; <b>destructor</b> Destroy;&nbsp;<br>
+<br>
+<b><font color="#008000">&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Посылает событие типа wType (<a href="##1table">см. таблицу</a>) с
+описанием Desc.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>procedure</b> ReportEvent(wType:Integer;
+Desc:String);&nbsp;<br>
+<b><font color="#008000"><br>
+&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Посылает событие типа wType (<a href="##1table">см. таблицу</a>) с
+форматированным описанием Desc.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>procedure</b> ReportEventFmt(wType:Integer;
+Desc:String; arr:array of const);&nbsp;
+</p>
+<p>
+<b><font color="#008000">&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Возвращает отчетные данные (события,
+добавленные с типом wType = LOG_REPORT)<br>
+&nbsp;&nbsp;&nbsp; // в виде коллекции
+хронологически представленных TReportItem (<a href="##1repitem">см.&nbsp;
+выше</a>).<br>
+</font>&nbsp;&nbsp;&nbsp; <b>procedure</b> GetReportLines(lines: <a href="##1repcol">TRepCollection</a>);<br>
+<br>
+<b>    published<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Формат строки &quot;Лог создан&quot;.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> CreateLineFormat:String <b> read</b> fCreateLineFmt
+<b> write</b>
+fCreateLineFmt;<br>
+<b><font color="#008000"><br>
+&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Формат времени, указываемого в каждой
+строке лога.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> ShortTimeFormat:String <b> read</b> fLineTimeFmt
+<b> write</b>
+fLineTimeFmt;<br>
+<b><font color="#008000"><br>
+&nbsp;&nbsp;&nbsp;</font></b><font color="#008000"> //
+Разделитель времени и описания события в
+строках лога.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> LineSep:String <b> read</b> fLineSep <b> write</b>
+fLineSep;<br>
+<br>
+&nbsp;&nbsp;&nbsp; //<font color="#008000"> Формат строки,
+сообщающей о смене даты.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> DateLineFormat:String <b> read</b> fDateLineFormat
+<b> write</b>
+fDateLineFormat;<br>
+<br>
+&nbsp;&nbsp;&nbsp; //<font color="#008000"> Строка <u>строго</u> из 6
+символов, каждый из которых будет
+использоваться<br>
+&nbsp;&nbsp;&nbsp; // для указания какого-либо
+события.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> AttribChars:String <b> read</b> fAttribChars
+<b> write</b>
+fAttribChars;<br>
+<font color="#008000"><br>
+&nbsp;&nbsp;&nbsp; // Строка, выводимая в
+лог при загрузке приложения<br>
+</font>&nbsp;&nbsp;&nbsp; <b>property</b> RunAppMessage:String <b> read</b> fRunAppMessage
+<b> write</b> fRunAppMessage;<br>
+<b>end</b>;<br>
+<br>
+<b><i><a name="#1table">&nbsp;типы журналируемых событий:</a></i></b>
+</p>
+<table border="0" width="878">
+  <tr>
+    <td width="176">
+<p> LOG_ERROR&nbsp;
+</p>
+    </td>
+    <td width="686"><p>Сообщение об ошибке
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="176">
+<p> LOG_WARNING&nbsp;
+</p>
+    </td>
+    <td width="686">Предупреждение</td>
+  </tr>
+  <tr>
+    <td width="176">
+<p> LOG_INFORM&nbsp;
+</p>
+    </td>
+    <td width="686">Информационное сообщение</td>
+  </tr>
+  <tr>
+    <td width="176">
+<p> LOG_SUCCESS&nbsp;
+</p>
+    </td>
+    <td width="686">Процесс завершен удачно</td>
+  </tr>
+  <tr>
+    <td width="176">
+<p> LOG_FAILURE&nbsp;
+</p>
+    </td>
+    <td width="686"><p>Процесс завершен с ошибкой
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="176">
+<p> LOG_REPORT
+</p>
+    </td>
+    <td width="686">Отчетные данные</td>
+  </tr>
+</table>
+<p><br>
+<font color="#008000">Пример :</font></p>
+<hr align="left" width="50%" noshade color="#008000">
+<p><font color="#008000">// Данный пример создает лог c:\test.log
+и добавляет в него 5 строк,<br>
+// 2 из которых текстовые, а 3 - отчетные; после
+чего извлекает<br>
+// данные из отчетных строк и выводит их на
+экран консоли.<br>
+<br>
+{$APPTYPE CONSOLE}<br>
+<b>uses</b> akLogUtils, Classes, sysUtils;<br>
+<b>var</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp; lg: TFileLog;<br>
+&nbsp;&nbsp;&nbsp; cl : TRepCollection;<br>
+&nbsp;&nbsp;&nbsp; i:Integer;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; lg := TFileLog.Create('c:\test.log');<br>
+&nbsp;&nbsp;&nbsp; <b>with</b> lg <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReportEvent(LOG_INFORM,
+'Data report begins');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReportEvent(LOG_REPORT,
+'data report1');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReportEvent(LOG_REPORT,
+'data report2');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReportEvent(LOG_REPORT,
+'data report3');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReportEvent(LOG_INFORM,
+'Data report ends');&nbsp;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cl :=
+TRepCollection.Create;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+GetReportLines(cl);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b>for</b> i := 0 <b> to</b> cl.Count-1 <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Writeln(DateTimeToStr(cl[i].RpDate), '  - ', cl[i].RpDesc);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+cl.Free;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Free;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; readln;<br>
+<b>end</b>.</font>
+</p>
+<hr align="left" width="50%" noshade color="#008000">
+<p><br>
+описано : akLogUtils
+</p>
+<hr noshade color="#0000FF">

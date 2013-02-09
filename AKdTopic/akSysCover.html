@@ -1,0 +1,759 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с системой.
+Системные функции.</b></u></font></p>
+<hr>
+<p><font size="4"><b><a name="#1">Как очистить коpзинy?<br>
+</a>
+</b></font>function SHEmptyRecycleBinA(HWND:hwnd; pszRootPath:PCHAR;
+dwFlags:DWORD):HRESULT; stdcall; external 'shell32.dll';<br>
+...<br>
+SHEmptyRecycleBinA(0, nil, 0);<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#2">Как поместить иконку в Tray ?&nbsp;<br>
+</a>
+</font></b><b>function</b> TaskBarAddIcon( hWindow : THandle; ID  : Cardinal;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ICON : hicon; CallbackMessage : Cardinal; Tip  : String ) : Boolean;<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; NID : TNotifyIconData;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; FillChar( NID, SizeOf( TNotifyIconData ), 0 );<br>
+&nbsp;&nbsp;&nbsp; <b>with</b> NID <b> do</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cbSize := SizeOf( TNotifyIconData );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wnd   := hWindow;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uID    := ID;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uFlags := NIF_MESSAGE <b> or</b> NIF_ICON or NIF_TIP;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uCallbackMessage := CallbackMessage;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hIcon  := Icon;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> Length( Tip ) > 63 <b> then</b> SetLength( Tip, 63 );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; StrPCopy( szTip, Tip );<br>
+&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; Result := Shell_NotifyIcon( NIM_ADD, @NID );<br>
+<b>end</b>;
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#3">Как получить доступ к иконкам
+десктопа?<br>
+</a></font></b>Вам просто необходимо взять хэндл этого органа управления. Пример:<br>
+<b>
+function</b> GetDesktopListViewHandle: THandle;<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; S: String;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Result := FindWindow('ProgMan', <b>nil</b>);<br>
+&nbsp;&nbsp;&nbsp; Result := GetWindow(Result, GW_CHILD);<br>
+&nbsp;&nbsp;&nbsp; Result := GetWindow(Result, GW_CHILD);<br>
+&nbsp;&nbsp;&nbsp; SetLength(S, 40);<br>
+&nbsp;&nbsp;&nbsp; GetClassName(Result, PChar(S), 39);<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> PChar(S) &lt;> 'SysListView32' <b> then</b> Result := 0;<br>
+<b>end</b>;<br>
+<br>
+После того, как Вы взяли тот хэндл, Вы можете использовать API этого ListView,
+определенный в модуле CommCtrl, для того, чтобы манипулировать рабочим столом.
+Смотрите тему &quot;LVM_xxxx messages&quot; в оперативной справке по Win32.
+К примеру, следующая строка кода:<br>
+SendMessage( GetDesktopListViewHandle, LVM_ALIGN, LVA_ALIGNLEFT, 0 );&nbsp;<br>
+разместит иконки рабочего стола по левой стороне рабочего стола
+Windows.</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#4">Как получить результат работы
+консольной программы ?<br>
+</a></font></b>Hужно использовать пайпы (CreatePipe), и работать с ними как с обычным файлом.<br>
+<br>
+<b>
+const</b><br>
+&nbsp;&nbsp;&nbsp; H_IN_READ   = 1;<br>
+&nbsp;&nbsp;&nbsp; H_IN_WRITE  = 2;<br>
+&nbsp;&nbsp;&nbsp; H_OUT_READ  = 3;<br>
+&nbsp;&nbsp;&nbsp; H_OUT_WRITE = 4;<br>
+&nbsp;&nbsp;&nbsp; H_ERR_READ  = 5;<br>
+&nbsp;&nbsp;&nbsp; H_ERR_WRITE = 6;<br>
+type<br>
+&nbsp;&nbsp;&nbsp; TPipeHandles = array [1..6] of THandle;<br>
+var<br>
+&nbsp;&nbsp;&nbsp; hPipes: TPipeHandles;<br>
+&nbsp;&nbsp;&nbsp; ProcessInfo: TProcessInformation;<br>
+<font color="#008000"><i>
+(**************************************************************<br>
+  CREATE HIDDEN CONSOLE PROCESS<br>
+**************************************************************)<br>
+</i></font><b>
+function</b> CreateHiddenConsoleProcess(szChildName: string;<br>
+&nbsp;&nbsp;&nbsp; ProcPriority: DWORD;&nbsp;&nbsp; ThreadPriority: integer): Boolean;<br>
+<b>
+label</b> error;<br>
+<b>
+var</b> fCreated: Boolean;<br>
+&nbsp;&nbsp;&nbsp; si: TStartupInfo;<br>
+&nbsp;&nbsp;&nbsp; sa: TSecurityAttributes;<br>
+<b>begin</b><br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // Initialize handles<br>
+</i></font>&nbsp;&nbsp;&nbsp; hPipes[ H_IN_READ ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; hPipes[ H_IN_WRITE ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; hPipes[ H_OUT_READ ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; hPipes[ H_OUT_WRITE ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; hPipes[ H_ERR_READ ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; hPipes[ H_ERR_WRITE ] := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; ProcessInfo.hProcess := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; ProcessInfo.hThread := INVALID_HANDLE_VALUE;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // Create pipes<br>
+&nbsp;&nbsp;&nbsp; // initialize security attributes for handle inheritance (for WinNT)<br>
+</i></font>&nbsp;&nbsp;&nbsp; sa.nLength := sizeof(sa);<br>
+&nbsp;&nbsp;&nbsp; sa.bInheritHandle := TRUE;<br>
+&nbsp;&nbsp;&nbsp; sa.lpSecurityDescriptor := <b>nil</b>;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // create STDIN pipe<br>
+</i></font>&nbsp;&nbsp;&nbsp; <b>if</b> <b> not</b> CreatePipe( hPipes[ H_IN_READ ], hPipes[ H_IN_WRITE ], @sa, 0 )<br>
+&nbsp;&nbsp;&nbsp; <b>then</b> <b> goto</b> error;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // create STDOUT pipe<br>
+</i></font>&nbsp;&nbsp;&nbsp; <b>if</b> <b> not</b> CreatePipe( hPipes[ H_OUT_READ ], hPipes[ H_OUT_WRITE ], @sa, 0 )<br>
+&nbsp;&nbsp;&nbsp; <b>then</b> <b> goto</b> error;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // create STDERR pipe<br>
+</i></font>&nbsp;&nbsp;&nbsp; <b>if</b> <b> not</b> CreatePipe( hPipes[ H_ERR_READ ], hPipes[ H_ERR_WRITE ], @sa, 0 )<br>
+&nbsp;&nbsp;&nbsp; <b>then</b> <b> goto</b> error;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // process startup information<br>
+</i></font>&nbsp;&nbsp;&nbsp; ZeroMemory(Pointer(@si), sizeof(si));<br>
+&nbsp;&nbsp;&nbsp; si.cb := sizeof(si);<br>
+&nbsp;&nbsp;&nbsp; si.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;<br>
+&nbsp;&nbsp;&nbsp; si.wShowWindow := SW_HIDE;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // assign "other" sides of pipes<br>
+</i></font>&nbsp;&nbsp;&nbsp; si.hStdInput := hPipes[ H_IN_READ ];<br>
+&nbsp;&nbsp;&nbsp; si.hStdOutput := hPipes[ H_OUT_WRITE ];<br>
+&nbsp;&nbsp;&nbsp; si.hStdError := hPipes[ H_ERR_WRITE ];<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // Create a child process<br>
+</i></font>&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fCreated := CreateProcess( <b>nil</b>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PChar(szChildName),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>nil</b>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>nil</b>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; True,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ProcPriority, <i><font color="#008000"> // CREATE_SUSPENDED,</font></i><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>nil</b>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>nil</b>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; si,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ProcessInfo );<br>
+&nbsp;&nbsp;&nbsp; <b>except</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fCreated := False;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> <b> not</b> fCreated <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>goto</b> error;<br>
+&nbsp;&nbsp;&nbsp; Result := True;<br>
+&nbsp;&nbsp;&nbsp; CloseHandle(hPipes[ H_OUT_WRITE ]);<br>
+&nbsp;&nbsp;&nbsp; CloseHandle(hPipes[ H_ERR_WRITE ]);<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; //    ResumeThread( pi.hThread );<br>
+</i></font>&nbsp;&nbsp;&nbsp; SetThreadPriority(ProcessInfo.hThread,
+ThreadPriority);<br>
+&nbsp;&nbsp;&nbsp; CloseHandle( ProcessInfo.hThread );<br>
+&nbsp;&nbsp;&nbsp; Exit;<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; //-----------------------------------------------------<br>
+</i></font><b>error</b>:<br>
+&nbsp;&nbsp;&nbsp; ClosePipes( hPipes );<br>
+&nbsp;&nbsp;&nbsp; CloseHandle( ProcessInfo.hProcess );<br>
+&nbsp;&nbsp;&nbsp; CloseHandle( ProcessInfo.hThread );<br>
+&nbsp;&nbsp;&nbsp; ProcessInfo.hProcess := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; ProcessInfo.hThread := INVALID_HANDLE_VALUE;<br>
+&nbsp;&nbsp;&nbsp; Result := False;<br>
+<b>end</b>;
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#5">Дайте пример установки оконного
+Hook.</a></b></font></p>
+<p>Создим приложение, подсчитывающее
+количество нажатий и отпусканий клавиш в
+системе.<br>
+<br>
+Для этого сначала создадим динамическую библиотеку
+:</p>
+<p><b>library</b> Hook;<br>
+<b>uses</b> Messages, SysUtils, Windows, akSysCover;<br>
+<b>var</b><br>
+&nbsp;&nbsp;&nbsp; ch: TChannel;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; chDat: PDWordArray;<br>
+<b>const</b><br>
+&nbsp;&nbsp;&nbsp; HP_COUNT = 0; <i><font color="#008000">//
+статическая переменная</font></i><br>
+&nbsp;&nbsp;&nbsp; HK_KBD =   5;<br>
+&nbsp;&nbsp;&nbsp; DATCOUNT = 10;<br>
+<br>
+<b>procedure</b> HookProc(nCode: integer; wParam: WPARAM; lParam: LPARAM); <b>stdcall</b>;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b><b> </b> nCode >= 0 <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inc(chDat^[HP_COUNT]); <font color="#008000"><i>//
+Передаем количество нажатий основному
+приложению</i></font><br>
+&nbsp;&nbsp;&nbsp; CallNextHookEx(chDat^[HK_KBD], nCode, wParam, lParam);<br>
+<b>end</b>;<br>
+<br>
+<b>procedure</b> SetHook; <b>export</b>;<br>
+<b>begin</b><i><font color="#008000"><br>
+&nbsp;&nbsp;&nbsp; // Устанавливаем хук на
+клавиатуру</font></i><b>&nbsp;&nbsp;</b><br>
+&nbsp;&nbsp;&nbsp; chDat^[HK_KBD] := SetWindowsHookEx(WH_KEYBOARD, @HookProc,
+hInstance, 0);<br>
+<b>end</b>;<br>
+<br>
+<b>procedure</b> UnHook; <b>export</b>;<br>
+<b>begin</b><font color="#008000"><i><br>
+&nbsp;&nbsp;&nbsp;</i></font> <font color="#008000"><i>// Удаляем
+установленный хук<br>
+</i></font>&nbsp;&nbsp;&nbsp; UnhookWindowsHookEx(chDat^[HK_KBD]);<br>
+<b>end</b>;<br>
+<br>
+<b>procedure</b> DLLMain(Reason: Integer);<br>
+<b>begin</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>case</b> Reason <b>of</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DLL_PROCESS_ATTACH : <font color="#008000"><i>//
+При старте DLL создаем(либо подключаемся)
+канал</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ch := TChannel.Create('HookChannel', chDat, SizeOf(DWORD) *
+DATCOUNT);<font color="#008000"><i><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //
+теперь chDat&nbsp; ссылается на общую область
+памяти.<br>
+&nbsp;&nbsp;&nbsp;</i></font>&nbsp;&nbsp;&nbsp;&nbsp; DLL_PROCESS_DETACH :<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ch.Free;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;<br>
+<br>
+<b>exports</b><br>
+&nbsp;&nbsp;&nbsp; SetHook,<br>
+&nbsp;&nbsp;&nbsp; UnHook;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; DLLProc := @DLLMain;<br>
+&nbsp;&nbsp;&nbsp; DllMain(DLL_PROCESS_ATTACH);<br>
+<b>end</b>.<br>
+</p>
+<hr align="left" width="50%" noshade color="#0000FF">
+<p>Собственно программа, устанавливающая
+хук :<br>
+<br>
+<font color="#008000">{$APPTYPE CONSOLE}<br>
+</font>uses akSysCover, Windows;<br>
+<b>const</b><br>
+&nbsp;&nbsp;&nbsp; DATCOUNT = 10;<br>
+<b>var</b><br>
+&nbsp;&nbsp;&nbsp; ch: TChannel;<br>
+&nbsp;&nbsp;&nbsp; chDat: PDWordArray;<br>
+<br>
+<b>procedure</b> SetHook; <b> external</b> 'Hook.dll';<br>
+<b>procedure</b> UnHook; <b> external</b> 'Hook.dll';<br>
+<b>begin<br>
+</b><font color="#008000"><i>&nbsp;&nbsp;&nbsp; // подключаемся к
+каналу данных<br>
+</i></font>&nbsp;&nbsp;&nbsp; ch := TChannel.Create('HookChannel', chDat, SizeOf(DWORD) * DATCOUNT);<br>
+&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetHook;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Writeln('Press Ctrl+C to abort');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>while</b> true <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ConsoleProcessMessages;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b>if</b> chDat^[0] &lt;> 0 <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b>begin</b> <font color="#008000"><i> // Если были нажатия
+кнопок</i></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+MessageBeep(0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+chDat^[0] := 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Write('.');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b>
+<b>end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UnHook;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ch.Free;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>.</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#6">
+Как узнать сколько памяти программа кушает
+?<br>
+</a>
+</font></b> Только динамически аллоцированная память:<br>
+System:<br>
+  AllocMemCount: Integer; { Number of allocated memory blocks }<br>
+  AllocMemSize: Integer;  { Total size of allocated memory blocks }<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#7">Как убрать из трэя икноки &quot;мертвых&quot;
+приложений ?<br>
+</a></font> var</b><br>
+&nbsp;&nbsp;&nbsp; i: integer;<br>
+&nbsp;&nbsp;&nbsp; hWnd: THandle;<br>
+&nbsp;&nbsp;&nbsp; R: TRect;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; hWnd := FindWindow('Shell_TrayWnd', NIL);<br>
+&nbsp;&nbsp;&nbsp; hWnd := FindWindowEx(hWnd, 0, 'TrayNotifyWnd', NIL);<br>
+&nbsp;&nbsp;&nbsp; GetWindowRect( hWnd, R );<br>
+&nbsp;&nbsp;&nbsp; <b>for</b> I := 1 <b> to</b> R.Right - R.Left <b> do</b><br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // Тут надо
+посложнее, на случай иконок не в одну строку,
+ну да сам<br>
+&nbsp;&nbsp;&nbsp; // разберешься</i></font><br>
+&nbsp;&nbsp;&nbsp; SendMessage(hWnd, WM_MOUSEMOVE, 0, I + (R.Bottom - R.Top) div 2 shl
+16 );<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#8">Как программно
+переключать раскладку клавиатуры?<br>
+</a></font></b>LoadKeyboardLayout('00000409', KLF_ACTIVATE); // английский<br>
+LoadKeyboardLayout('00000419', KLF_ACTIVATE); // русский</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#9">Как включать/выключать
+лампочки на numlock, capslock, etc... ?<br>
+</a></b></font><b>procedure</b> SetNumLock(bState:Boolean);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; KeyState : TKeyboardState;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; GetKeyboardState(KeyState);<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> ( (bState) <b> and</b> (<b>not</b> ((KeyState[VK_NUMLOCK]
+<b> and</b> 1)=1) ) <b> or</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( (<b>not</b> (bState)) <b> and</b> ((KeyState[VK_NUMLOCK]
+<b> and</b> 1)=1))) <b> then</b><br>
+<i><font color="#008000">&nbsp;&nbsp;&nbsp; // Simulate a key press<br>
+</font></i>&nbsp;&nbsp;&nbsp; keybd_event(VK_NUMLOCK, $45, (KEYEVENTF_EXTENDEDKEY
+<b> or</b> 0), 0);<br>
+<font color="#008000"><i>&nbsp;&nbsp;&nbsp; // Simulate a key release<br>
+</i></font>&nbsp;&nbsp;&nbsp; keybd_event( VK_NUMLOCK, $45,  (KEYEVENTF_EXTENDEDKEY
+<b> or</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; KEYEVENTF_KEYUP), 0);<br>
+<b>end</b>;<br>
+<br>
+Заменяйте VK_NUMLOCK на все что душе угодно.</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#10">Как сделать имитацию
+ввода с клавиатуры для дос-программы ?&nbsp;<br>
+</a></b></font><b>const</b><br>
+&nbsp;&nbsp;&nbsp; ExtendedKeys: set of Byte = [  // incomplete list<br>
+&nbsp;&nbsp;&nbsp; VK_INSERT, VK_DELETE, VK_HOME,   VK_END,    VK_PRIOR,   VK_NEXT,<br>
+&nbsp;&nbsp;&nbsp; VK_LEFT,   VK_UP,     VK_RIGHT,  VK_DOWN,   VK_NUMLOCK];<br>
+<br>
+<b>
+procedure</b> SimulateKeyDown(Key : byte);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; flags: DWORD;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> Key <b> in</b> ExtendedKeys <b> then</b> flags := KEYEVENTF_EXTENDEDKEY else flags := 0;<br>
+&nbsp;&nbsp;&nbsp; keybd_event(Key, MapVirtualKey(Key, 0), flags, 0);<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> SimulateKeyUp(Key : byte);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; flags: DWORD;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> Key <b> in</b> ExtendedKeys <b> then</b> flags := KEYEVENTF_EXTENDEDKEY
+<b> else</b> flags := 0;<br>
+&nbsp;&nbsp;&nbsp; keybd_event(Key, MapVirtualKey(Key, 0), KEYEVENTF_KEYUP <b> or</b> flags, 0);<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> SimulateKeystroke(Key : byte);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; flags: DWORD;<br>
+&nbsp;&nbsp;&nbsp; scancode: BYTE;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> Key <b> in</b> ExtendedKeys <b> then</b> flags := KEYEVENTF_EXTENDEDKEY
+<b> else</b> flags := 0;<br>
+&nbsp;&nbsp;&nbsp; scancode := MapVirtualKey(Key, 0);<br>
+&nbsp;&nbsp;&nbsp; keybd_event(Key, scancode, flags, 0);<br>
+&nbsp;&nbsp;&nbsp; keybd_event(Key, scancode, KEYEVENTF_KEYUP <b> or</b> flags, 0);<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#11">Как минимизиpовать все
+запущеные окна ?<br>
+</a></b></font><br>
+<font color="#008000"><i>{$APPTYPE CONSOLE}</i></font><br>
+<b>
+program</b> Minimize;<br>
+<b>
+uses</b> Windows,Messages;<br>
+<b>
+var</b> Count:integer;<br>
+<br>
+<b>
+function</b> EnumProc (WinHandle: HWnd; Param: LongInt): Boolean; <b>stdcall</b>;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> (GetParent (WinHandle) = 0) <b> and</b> (not IsIconic (WinHandle))
+<b> and</b><br>
+&nbsp;&nbsp;&nbsp; (IsWindowVisible (WinHandle)) <b> then</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PostMessage (WinHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Inc(Count);<br>
+&nbsp;&nbsp;&nbsp; EnumProc := TRUE;<br>
+<b>end</b>;<br>
+<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Count:=0;<br>
+&nbsp;&nbsp;&nbsp; EnumWindows (@EnumProc, 0);<br>
+&nbsp;&nbsp;&nbsp; Writeln('Minimized:',Count,' windows');<br>
+<b>end</b>.<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#12">Как вывести окно свойств
+компьютеpа?<br>
+</a></font></b>ShellExecute(Application.Handle, 'open', 'sysdm.cpl', nil, nil,
+sw_ShowNormal);</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#13">Как вызывать диалог
+выбора _фолдеров_ ?<br>
+</a></font></b>SelectDirectory из SysUtils</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#14">Как пpогpамно вывести
+окно свойств экpана?<br>
+</a></b></font>ShellExecute(Application.Handle, 'open', 'desk.cpl', nil, nil, sw_ShowNormal);</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#15">Как сделать MS-Style диалог
+&quot;О программе&quot; ?<br>
+</a></font></b>  Диалог можно нарисовать ручками (из калькулятора того же срисовать),<br>
+а информацию об OS и количестве памяти можно взять следующим образом :<br>
+<br>
+<b>
+type</b><br>
+&nbsp;&nbsp;&nbsp; TAboutForm = <b>class</b>(TForm)<br>
+&nbsp;&nbsp;&nbsp; OS: TLabel;<br>
+&nbsp;&nbsp;&nbsp; Mem: TLabel;<br>
+...<br>
+<br>
+<b>
+procedure</b> TAboutForm.GetOSInfo;<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; Platform: string;<br>
+&nbsp;&nbsp;&nbsp; BuildNumber: Integer;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>case</b> Win32Platform <b> of</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VER_PLATFORM_WIN32_WINDOWS:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Platform := 'Windows 95';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+BuildNumber := Win32BuildNumber and $0000FFFF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VER_PLATFORM_WIN32_NT:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Platform := 'Windows NT';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+BuildNumber := Win32BuildNumber;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Platform := 'Windows';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BuildNumber := 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;</p>
+<p>&nbsp;&nbsp;&nbsp; <b>if</b> (Win32Platform = VER_PLATFORM_WIN32_WINDOWS) <b> or</b><br>
+&nbsp;&nbsp;&nbsp; (Win32Platform = VER_PLATFORM_WIN32_NT) <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if Win32CSDVersion = ''
+<b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+OS.Caption := Format('%s %d.%d (Build %d)', [Platform, Win32MajorVersion,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Win32MinorVersion, BuildNumber])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+OS.Caption := Format('%s %d.%d (Build %d: %s)', [Platform, Win32MajorVersion,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Win32MinorVersion, BuildNumber, Win32CSDVersion]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OS.Caption := Format('%s %d.%d', [Platform, Win32MajorVersion,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Win32MinorVersion])<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TAboutForm.InitializeCaptions;<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; MS: TMemoryStatus;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; GetOSInfo;<br>
+&nbsp;&nbsp;&nbsp; MS.dwLength := SizeOf(TMemoryStatus);<br>
+&nbsp;&nbsp;&nbsp; GlobalMemoryStatus(MS);<br>
+&nbsp;&nbsp;&nbsp; Mem.Caption := FormatFloat('#,###" KB"', MS.dwTotalPhys div 1024);<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><a name="#16"><font size="4"><b>Как вызвать браузер/создать
+письмо по указанному адресу ?</b></font></a><b><font size="4"><br>
+</font></b>ShellExecute(Application.Handle,'open','http://mysite.com,nil,nil,0);<br>
+ShellExecute(Application.Handle,'open','mailto:towho@mysite.com',nil,nil,0);<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font color="#000000" size="4"><a name="#17">Как сделать,
+чтобы мое приложение запустилось до
+загрузки десктопа ?<br>
+<br>
+</a></font></b><font color="#000000">Для этого нужно
+добавить ключ в реестре :&nbsp;<br>
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce<br>
+и дописать туда значение [Имя вашей
+программы] = [что запускать]</font>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#18">Как записать в клипборд
+русский текст так, чтобы он нормально
+вставился в MS Word ?<br>
+</a></font></b><br>
+<b>
+procedure</b> SendToClipboard( <b> const</b> S : String );<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; Data: THandle;<br>
+&nbsp;&nbsp;&nbsp; DataPtr: Pointer;<br>
+&nbsp;&nbsp;&nbsp; Version : TOSVersionInfo;<br>
+&nbsp;&nbsp;&nbsp; Size : Integer;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Version.dwOSVersionInfoSize := SizeOf(TOSVersionInfo);<br>
+&nbsp;&nbsp;&nbsp; GetVersionEx(Version);<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> Version.dwPlatformId = VER_PLATFORM_WIN32_NT
+<b> then</b><br>
+&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>with</b> Clipboard <b> do</b>&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Size := Length(S) * SizeOf(WideChar) + 1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Open;<br>
+&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Data := GlobalAlloc(GMEM_MOVEABLE + GMEM_DDESHARE, Size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DataPtr := GlobalLock(Data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+MultiByteToWideChar(CP_ACP, 0, PChar(S), Length(S), DataPtr, Size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Clear;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SetClipboardData(CF_UNICODETEXT, Data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GlobalUnlock(Data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp; finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GlobalFree(Data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp; end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp; finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Close;<br>
+&nbsp;<b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp; Clipboard.SetTextBuf(PChar(S));<br>
+<b>end</b>;
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#19">Как послать нажатие,
+например, ALT+F другой программе ?</a></font></b>
+</p>
+<p>keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), 0, 0);<br>
+ keybd_event( Ord('F'), MapVirtualKey( Ord('F'),0), 0, 0);<br>
+ keybd_event( Ord('F'), MapVirtualKey( Ord('F'),0), KEYEVENTF_KEYUP, 0);<br>
+ keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), KEYEVENTF_KEYUP, 0);<br>
+<br>
+ keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), 0, 0);<br>
+ keybd_event( VK_SNAPSHOT, MapVirtualKey( VK_SNAPSHOT,0), 0, 0);<br>
+ keybd_event( VK_SNAPSHOT, MapVirtualKey( VK_SNAPSHOT,0), KEYEVENTF_KEYUP,0);<br>
+ keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), KEYEVENTF_KEYUP, 0);<br>
+<br>
+ keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), 0, 0);<br>
+ keybd_event( VK_TAB, MapVirtualKey( VK_TAB,0), 0, 0);<br>
+ keybd_event( VK_TAB, MapVirtualKey( VK_TAB,0), KEYEVENTF_KEYUP, 0);<br>
+ keybd_event( VK_MENU, MapVirtualkey( VK_MENU, 0 ), KEYEVENTF_KEYUP, 0);<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#20">Как сделать русский MESSAGEDLG
+?&nbsp;</a></font></b><br>
+<br>
+ Все пpосто как колесо. Hаходим в память pесуpс и меняем его на наш.
+Все сообщения в MessageDlg (caption, button) будут на нашем pодном языке.<br>
+ Точно также можно изменить и для дpугих языков. И не нужно лезть в consts.pas, пpосто в пpоекте добавляем в uses RusDlg. :))<br>
+<br>
+=== Cut Begin RUSDLG.PAS ===<br>
+<b>
+unit</b> RusDlg;<br>
+<br>
+<b>
+interface</b><br>
+<b>
+implementation</b><br>
+<br>
+<b>
+uses</b> Classes, Forms, Consts, Dialogs; <font color="#008000"> //, RtpCtrls</font>;<br>
+<br>
+<b>
+resourcestring</b><br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusWarning = 'Предупреждение';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusError = 'Ошибка';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusInformation = 'Информация';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusConfirm = 'Подтверждение';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusYes = '&amp;Да';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusNo = '&amp;ет';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusOK = 'OK';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusCancel = 'Отмена';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusHelp = '&amp;Помощь';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusHelpNone = 'Помощь недоступна';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusHelpHelp = 'Помощь';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusAbort = '&amp;Прервать';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusRetry = 'По&amp;вторить';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusIgnore = '&amp;Игнорировать';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusAll = '&amp;Все';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusNoToAll = 'H&amp;ет для Всех';<br>
+&nbsp;&nbsp;&nbsp; SMsgDlgRusYesToAll = 'Д&amp;а для Всех';<br>
+<br>
+<b>
+const</b><br>
+&nbsp;&nbsp;&nbsp; Captions: <b>array</b>[TMsgDlgType] <b> of</b> Pointer = (@SMsgDlgRusWarning,&nbsp;<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusError,<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusInformation, @SMsgDlgRusConfirm, <b>nil</b>);<br>
+<br>
+&nbsp;&nbsp;&nbsp; ButtonCaptions: array[TMsgDlgBtn] of Pointer = (<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusYes, @SMsgDlgRusNo, @SMsgDlgRusOK, @SMsgDlgRusCancel,&nbsp;<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusAbort,<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusRetry, @SMsgDlgRusIgnore, @SMsgDlgRusAll, @SMsgDlgRusNoToAll,&nbsp;<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusYesToAll,<br>
+&nbsp;&nbsp;&nbsp; @SMsgDlgRusHelp);<br>
+<br>
+<b>
+procedure</b> _ChangeCaptions(List: PPointerList;Last: Pointer);<br>
+<b>var</b>&nbsp; i, Max: Integer;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IsFind: Boolean;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Max := (Integer(Last)-Integer(List)) <b> div</b> SizeOf(Pointer);<br>
+&nbsp;&nbsp;&nbsp; IsFind := False;<br>
+&nbsp;&nbsp;&nbsp; <b>for</b> i := 0 <b> to</b> Max - 2 <b> do</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b><b> </b>(List[i] = @SMsgDlgWarning) <b> and</b> (List[i+2] = @SMsgDlgInformation)
+<b> then</b>&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IsFind := True;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>break</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> IsFind <b> then</b> Move(Captions, List[i], SizeOf(Captions));<br>
+&nbsp;&nbsp;&nbsp; IsFind := False;<br>
+&nbsp;&nbsp;&nbsp; <b>for</b> i := i <b> to</b> Max - 2 <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> (List[i] = @SMsgDlgYes) <b> and</b> (List[i+2] = @SMsgDlgOK)
+<b> then</b>&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IsFind := True;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>break</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> IsFind <b> then</b> Move(ButtonCaptions, List[i], SizeOf(ButtonCaptions));<br>
+<b>end</b>;<br>
+<br>
+<b>
+initialization</b><br>
+_ChangeCaptions(@DebugHook, @Application);<br>
+<b>end</b>.<br>
+<br>
+</p>
+<hr noshade color="#0000FF" size="8">
+<p><font size="4"><b><a name="#51">Возвращает хандл
+указанного процесса. <font color="#008000">(GetProcessHandle)</font><br>
+</a></b></font>  function GetProcessHandle(ProcessID: DWORD):Integer;<br>
+&nbsp;&nbsp;&nbsp; processID - ID процесса.<br>
+&nbsp;&nbsp;&nbsp; result - хандл указанного процесса,
+либо nil в случае ошибки.</p>
+<p>После окончания работы с хандлом его необходимо закрыть функцией CloseHandle<br>
+<br>
+описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#52">Возвращает имя процесса
+ProcessID<font color="#008000"> (GetProcessInfo)</font><br>
+</a></b></font>  procedure GetProcessInfo(ProcessID:DWord; var Path: String);<br>
+&nbsp;&nbsp;&nbsp; processID - ID процесса<br>
+&nbsp;&nbsp;&nbsp; Path - сюда возвращается имя
+процесса ID</p>
+<p>описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#53">Делает окно hndl
+полупрозрачным. Только для Win2k.<font color="#008000">
+(SetWindowTransp)</font><br>
+</a></b></font> procedure SetWindowTransp(hndl: THandle; Perc: byte);<br>
+&nbsp;&nbsp;&nbsp; hndl - хандл окна, которое хотим
+сделать полупрозрачным.<br>
+&nbsp;&nbsp;&nbsp; Perc - число от 1 до 100, указывающее
+уровень прозрачности.</p>
+<p>описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#54">Возвращает имя
+системной директории <font color="#008000">(GetSystemDir)</font><br>
+</a></b></font> function GetSystemDir:String;<br>
+&nbsp;&nbsp;&nbsp; result - название системной
+директории.</p>
+<p>описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#55">Аналог Application.ProcessMessages
+для консольных программ</a> <font color="#008000">(ConsoleProcessMessages)</font><br>
+</b></font> procedure ConsoleProcessMessages;<br>
+<br>
+Если глобальная переменная TerminateApp
+устанавливается в true, то из приложения
+нужно выходить - кто-то послал WM_QUIT.</p>
+<p>описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#56">Регистрирует DLL <font color="#008000">(RegisterDLL)</font><br>
+</a></b></font> procedure RegisterDLL(fn:String; Reg: boolean = true);<br>
+&nbsp;&nbsp;&nbsp; fn - имя DLL<br>
+&nbsp;&nbsp;&nbsp; reg - если true, то функция
+зарегистрирует DLL, иначе - удалит информацию
+о ней из реестра.</p>
+<p>описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#57">Возвращает время
+компиляции проекта <font color="#008000">(GetBuildTime)<br>
+</font></a></b></font> function GetBuildTime: TDateTime;<br>
+<br>
+описано : akSysCover</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#58">Как создать статическую
+переменную, видимую из других приложений ? </a></b></font><font color="#008000"><font size="4"><a name="#58"><b>(TChannel)</b></a></font><br>
+</font><br>
+Для создания переменных, видимых из разных
+процессов используйте класс TChannel,
+описанный в akSysCover :<br>
+<br>
+  TChannel = <b>class</b>(TObject)<br>
+<b>public<br>
+</b><font color="#008000">&nbsp;&nbsp;&nbsp; // Очищает
+статическую память</font><br>
+&nbsp;&nbsp;&nbsp; <b>procedure</b> Clean;<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Конструктор. Если
+канал с именем Channel не существует, то&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; // таковой канал создастся, иначе -
+откроет уже существующий.<br>
+&nbsp;&nbsp;&nbsp; // Data - указатель на область памяти
+размером Len, в которой<br>
+&nbsp;&nbsp;&nbsp;
+//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+будет находится статическая переменная.</font><br>
+&nbsp;&nbsp;&nbsp; <b>constructor</b> Create(Channel:String; <b> var</b> Data;
+Len:Integer);<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Деструктор</font><br>
+&nbsp;&nbsp;&nbsp; <b>destructor</b> Destroy; override;<br>
+<b>end</b>;<br>
+<br>
+<font color="#008000">Пример использования смотрите <a href="#5">здесь</a>.<br>
+<br>
+</font>
+описано : akSysCover</p>
+<hr noshade color="#0000FF">

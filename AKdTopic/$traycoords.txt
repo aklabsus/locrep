@@ -1,0 +1,64 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, RXShell;
+
+type
+  TForm1 = class(TForm)
+    Button1: TButton;
+    RxTrayIcon1: TRxTrayIcon;
+    procedure Button1Click(Sender: TObject);
+    procedure RxTrayIcon1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+  private
+    ps: TPoint;
+    fnd: Boolean;
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.DFM}
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  hTrayAll, hTray, hExplorer: THandle;
+  r: TRect;
+  x, y: Integer;
+  ar: array[1..2] of word;
+begin
+  hExplorer := FindWindow('Shell_TrayWnd', nil);
+  hTrayAll := FindWindowEx(hExplorer, 0, 'TrayNotifyWnd', nil);
+  hTray := FindWindowEx(hTrayAll, 0, 'ToolbarWindow32', nil);
+
+  fnd := False;
+  GetWindowRect(hTray, r);
+  for x := 0 to Trunc((r.Right - r.Left) / 16) do
+    for y := 0 to Trunc((r.Bottom - r.Top) / 16) do
+      begin
+        ar[2] := y * 16; ps.y := ar[2];
+        ar[1] := x * 16; ps.x := ar[1];
+        Windows.ClientToScreen(hTray, ps);
+        SendMessage(hTray, WM_MOUSEMOVE, 0, DWORD(ar));
+      end;
+end;
+
+procedure TForm1.RxTrayIcon1MouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  if fnd then exit;
+
+  Caption := format('%d:%d', [ps.x, ps.y]);
+  fnd := true;
+end;
+
+end.
+

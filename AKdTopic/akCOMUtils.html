@@ -1,0 +1,126 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с COM и OLE</b></u></font></p>
+<hr>
+<p><a name="#1"><b><font size="4">Как обрабатывать ошибки
+в дельфовых COM-объектах ?
+</font></b>  </a></p>
+<p>  TCustomBasePlugObject = <b> class</b> ( TAutoObject, IUnknown, IDispatch )<br>
+   ...<br>
+<b>
+   protected</b><br>
+<b>
+    function</b> SafeCallException(ExceptObject: TObject; ExceptAddr:<br>
+Pointer): <font color="#008000">{$IFDEF _D4_}</font>HResult<font color="#008000">{$ELSE}</font>Integer<font color="#008000">{$ENDIF}</font>;<b>
+override;</b><br>
+...
+<br>
+<b>
+function</b>  TCustomBasePlugObject.SafeCallException;<br>
+<b>
+ var</b> ExMsg:String;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Result := inherited SafeCallException(ExceptObject, ExceptAddr);<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>Try</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> ExceptObject is EAbort
+<b> then </b> exit;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExMsg := 'Exception: PlugObject="'+ClassName+'"';<br>
+<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>if </b> ExceptObject
+<b> is</b> Exception <b> then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExMsg := ExMsg +
+#13 + '    Message: ' + #13 + Exception(ExceptObject).Message +&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #13 + '
+Module:' + GetModuleFileName + #13 + Adress:'+Format('%p',[ExceptAddr]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b>
+<b>if</b> (ExceptObject is EOleSysError) <b> and</b> (EOleSysError(ExceptObject).ErrorCode &lt; 0)<b>&nbsp;</b>
+<b>then&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</b>ExMsg := ExMsg + #13'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+OleSysError.ErrorCode='+IntToStr(EOleSysError(ExceptObject).ErrorCode);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; toLog(ExMsg);<br>
+<b>&nbsp;&nbsp;&nbsp; except</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b> e<b>nd</b>;<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#2">Как поместить объект из
+Shell Namespace (например, My Computer) в свою форму?</a><br>
+</b></font> В принципе у IE4 ActiveX (aka TWebBrowser) есть метод Navigate2, в<br>
+ который можно передать объект из Shell Namespace<br>
+<br>
+<b>
+ procedure</b> TForm1.Button1Click(Sender: TObject);<br>
+<b>
+ var&nbsp;&nbsp; </b>PIDL: PItemIdList;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cbpidl: Integer;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path, A,B,C,D: Olevariant;<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; SHGetSpecialFolderLocation( Handle, CSIDL_DRIVES, PIDL );<br>
+&nbsp;&nbsp;&nbsp; cbpidl := LocalSize(Cardinal(pidl));<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> cbpidl > 0 <b> then</b>&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path := VarArrayCreate([0, cbpidl-1], varByte);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Move(pidl^, VarArrayLock(Path)^, cbpidl);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VarArrayUnlock(Path);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WebBrowser1.Navigate2(Path);<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;</b> <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; CoTaskMemFree(PIDL);<br>
+<b>end</b>;<br>
+<br>
+ Там еще правда надо разбираться с Security, но подумать на эту тему<br>
+ теоретически можно.</p>
+<hr noshade color="#0000FF">
+<p>
+<a href="akCOMUtils.html#2">
+</a><b><font size="4"><a name="#3">Как определить зарегистрирован-ли в системе ActiveX component зная
+его GUID ?<br>
+</a></font></b><br>
+<b>
+procedure</b> CheckComServerInstalled(<b>const</b> CLSID: TGUID; <b> const</b>
+DllName:String);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; Size: Integer;<br>
+&nbsp;&nbsp;&nbsp; DbClientHandle: THandle;<br>
+&nbsp;&nbsp;&nbsp; FileName: String;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Size := 256;<br>
+&nbsp;&nbsp;&nbsp; SetLength(FileName, Size);<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>try</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> RegQueryValue(HKEY_CLASSES_ROOT,&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PChar(Format('CLSID\%s\InProcServer32',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [GUIDToString(CLSID)])), PChar(FileName), Size) = ERROR_SUCCESS
+<b> then</b><br>
+<b>&nbsp;&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetLength(FileName, Size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DbClientHandle := LoadLibrary(PChar(FileName));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FreeLibrary(DbClientHandle);<br>
+&nbsp;&nbsp;<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> DbClientHandle = 0
+<b> then</b><b>&nbsp;</b><b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+RegDeleteKey(HKEY_CLASSES_ROOT,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PChar(Format('CLSID\%s',[GUIDToString(CLSID)])));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+RegisterComServer(DllName);<br>
+&nbsp;&nbsp;&nbsp;<b>&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>
+<b>end</b>;<br>
+<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b>&nbsp; <b>end</b>&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</b>&nbsp;<b><br>
+</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RegisterComServer(DllName);<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>except</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b>&nbsp;<b>&nbsp;&nbsp;&nbsp;</b> <b>raise</b>
+Exception.CreateFmt('Failed (%s).', [DllName]);<br>
+<b>&nbsp;&nbsp; </b> <b>end</b>;<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">

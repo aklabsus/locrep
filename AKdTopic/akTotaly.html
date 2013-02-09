@@ -1,0 +1,453 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Общие вопросы</b></u></font></p>
+<hr>
+<p><font size="4"><b><a name="#1">Как работать с плагинами
+?<br>
+</a>
+</b></font>Я сделал так - выбираю все DLL из
+каталога с программой, загружаю каждую и
+пытаюсь найти в ней функцию (через API
+GetProcAddress) с заранее определенным жестко
+именем (например что нибудь типа IsPluginForMyStuff).
+Если нашлась - DLL считается моим плагином,
+если нет - выгрузить и забыть.<br>
+А набор вызываемых функций по идее одинаков
+у всех плагинов, и программа (основная) в
+курсе какие именно функции она ищет в DLL. Если даже и не так, то&nbsp; ничего не мешает тебе определить в плагине функцию наподобие
+GetFeatures, возвращающую список строк-названий поддержанных плагином процедур.<br>
+<br>
+Вот часть моего кода по работе с плагинами...<br>
+<br>
+=================<br>
+...<br>
+<b>
+type</b><br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Процедурные типы для хранения ссылок на функции плагинов<br>
+</font>&nbsp;&nbsp;&nbsp; TGetNProc=function:shortstring;<br>
+&nbsp;&nbsp;&nbsp; TGetSProc=function:integer;<br>
+&nbsp;&nbsp;&nbsp; TProcessProc=procedure(config:pointer; request:PRequest; <b> var</b> reply:PReply);<br>
+&nbsp;&nbsp;&nbsp; TConfigProc=procedure(defcfg:PSysConfig; <b> var</b> config:pointer);<br>
+&nbsp;&nbsp;&nbsp; TSaveLoadProc=procedure(inifile:pointer; <b> var</b> config:pointer);<br>
+<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Информация об отдельном плагине<br>
+</font>&nbsp;&nbsp;&nbsp; TPlugin=<b>record</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Name:shortstring; <font color="#008000">                   // Полное название</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filename:shortstring; <font color="#008000">               // Имя файла</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handle:integer;<font color="#008000">                     // Хэндл загруженной DLL</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CFGSize:integer; <font color="#008000">                    // Размер конфигурации в RAM</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ProcessProc: TProcessProc; <font color="#008000">      // Адрес процедуры обработки</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ConfigProc: TConfigProc; <font color="#008000">       // Адрес процедуры настройки</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LoadCFG,SaveCFG:TSaveLoadProc; <font color="#008000">      // Адреса процедур чтения/записи cfg</font><br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+  PPlugin=^TPlugin;<br>
+<br>
+<font color="#008000">
+  // Список загруженных плагинов</font><br>
+TPlugins=<b>class</b>(TList);<br>
+<br>
+...<br>
+<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; Plugins:TPlugins;  sr:TSearchRec;  lib:integer;<br>
+&nbsp;&nbsp;&nbsp; pgetn:TGetNProc;  pgets: TGetSProc;  plugin:PPlugin;<br>
+<br>
+...<br>
+<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Читаем плагины и создаем их список.<br>
+</font>&nbsp;&nbsp;&nbsp; Plugins:=TPlugins.Create;<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> FindFirst('*.dll',faAnyFile,sr)&lt;>0 <b> then</b> <b> begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ShowMessage('Hе найдено подключаемых модулей.');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Close;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>repeat</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib:=LoadLibrary(PChar(sr.Name));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> lib&lt;>0 <b> then</b> <b> begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @pgetn:=GetProcAddress(lib, 'GetPluginName');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> @pgetn=nil
+<b> then</b> FreeLibrary(lib)<font color="#008000">    // Hе плагин</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>else</b> <b> begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; New(plugin);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @pgets:=GetProcAddress(lib, 'GetCFGSize');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; plugin.Name:=pgetn;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.Filename:=sr.Name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.CFGSize:=pgets;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; plugin.Handle:=lib;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.ConfigProc:=GetProcAddress(lib, 'Configure');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.ProcessProc:=GetProcAddress(lib, 'Process');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.SaveCFG:=GetProcAddress(lib, 'SaveCFG');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plugin.LoadCFG:=GetProcAddress(lib, 'LoadCFG');<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Plugins.Add(plugin);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; <b>until</b> FindNext(sr)&lt;>0;<br>
+&nbsp;&nbsp;&nbsp; FindClose(sr);<br>
+...
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#2">Как вытащить VersionInfo из свойств
+проекта ?</a></b></font>
+</p>
+<p><b>function</b> CurrentFileInfo(NameApp : string) : string;<br>
+<b>
+var</b> dump: DWORD;<br>
+&nbsp;&nbsp;&nbsp; size: integer;<br>
+&nbsp;&nbsp;&nbsp; buffer: PChar;<br>
+&nbsp;&nbsp;&nbsp; VersionPointer, TransBuffer: PChar;<br>
+&nbsp;&nbsp;&nbsp; Temp: integer;<br>
+&nbsp;&nbsp;&nbsp; CalcLangCharSet: string;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; size := GetFileVersionInfoSize(PChar(NameApp), dump);<br>
+&nbsp;&nbsp;&nbsp; buffer := StrAlloc(size+1);<br>
+&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GetFileVersionInfo(PChar(NameApp), 0, size, buffer);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VerQueryValue(buffer, '\VarFileInfo\Translation',
+pointer(TransBuffer), dump);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> dump >= 4 <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+temp:=0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+StrLCopy(@temp, TransBuffer, 2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+CalcLangCharSet:=IntToHex(temp, 4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+StrLCopy(@temp, TransBuffer+2, 2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+CalcLangCharSet := CalcLangCharSet+IntToHex(temp, 4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VerQueryValue(buffer, pchar('\StringFileInfo\'+CalcLangCharSet+'\'
++&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
++'FileVersion'), pointer(VersionPointer), dump);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>if</b> (dump > 1) <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SetLength(Result, dump);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+StrLCopy(Pchar(Result), VersionPointer, dump);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>else</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Result := '0.0.0.0';<br>
+&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; StrDispose(Buffer);<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#3">Как DLL правильно заполнить
+строковыми ресурсами, и потом достать их ?</a></b></font>
+</p>
+<p>Делаешь текстовый файл с ресурсами, типа<br>
+<font color="#000080">
+--my.rc--<br>
+STRINGTABLE<br>
+{<br>
+&nbsp;&nbsp;&nbsp; 00001, "My String #1"<br>
+&nbsp;&nbsp;&nbsp; 00002, "My String #2"<br>
+}<br>
+</font>
+Далее компилируешь его:<br>
+brcc32 my.rc<br>
+<br>
+У тебя получится my.res.<br>
+Делаешь DLL:<br>
+<font color="#000080">
+--my.dpr--<br>
+library my;<br>
+{$R my.res}<br>
+begin<br>
+end.<br>
+</font><br>
+Компилируешь Дельфиским компилятором:<br>
+dcc32 my.dpr<br>
+Получаешь, наконец-то свою my.dll<br>
+<br>
+Теперь о том, как использовать.<br>
+В своей программе:
+</p>
+<p><b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; h : THandle;<br>
+&nbsp;&nbsp;&nbsp; S: array [0..255] of Char;<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; h := LoadLibrary('MY.DLL');<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> h &lt;= 0 <b> then</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ShowMessage('Bad Dll Load')<br>
+&nbsp;&nbsp;&nbsp; <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetLength(S, 512);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LoadString(h, 1, @S, 255);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FreeLibrary(h);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#4">С каким числовым форматом Delphi
+работает быстрее всего ?<br>
+</a>
+</b></font>  Простой тест: под рукой прога для вычисления координат цвета&nbsp;<br>
+по спектру из 10000 точек, вычислений там прилично:<br>
+</p>
+<table border="1" width="245">
+  <tr>
+    <td width="108" bordercolor="#000000" bgcolor="#00FFFF">
+<p> type&nbsp;
+</p>
+    </td>
+    <td width="121" bordercolor="#000000" bgcolor="#00FFFF">
+<p>time, sec
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108">
+<p> single&nbsp;&nbsp;&nbsp;
+</p>
+    </td>
+    <td width="121">
+<p>2.20
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108">
+<p> double&nbsp;
+</p>
+    </td>
+    <td width="121">
+<p>3.63
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108">
+<p> real&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</p>
+    </td>
+    <td width="121">
+<p>       4.28
+</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108">
+<p> extended&nbsp;
+</p>
+    </td>
+    <td width="121">
+<p>   5.95
+</p>
+    </td>
+  </tr>
+</table>
+<p><br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#5">А где найти аналоги lex, yacc для
+паскаля ?<br>
+</a>
+</font></b> 1. Cсылки есть на <a href="http://alexm.here.ru">http://alexm.here.ru</a>;<br>
+ 2. Другая версия, pаботающая под tp/fpc/delphi/vp, лежит на
+ftp://ftp.fprint.com/fprint/vpascal<br>
+ 3. <a href="http://www.musikwissenschaft.uni-mainz.de/~ag/tply">http://www.musikwissenschaft.uni-mainz.de/~ag/tply</a>
+Там есть ссылки на несколько ваpиантов pеализации на базе этого пакета.    Это freeware pеализация Lex и Yacc для паскаля. Пpактически один к одномy
+соотоветсвyет Unix-ым Lex и Yacc для C. Разница только в паскаль/dos/windows<br>
+    зависимых кyсках.&nbsp;<br>
+ 4. <a href="http://www.sand-stone.com/vpsup.htm">http://www.sand-stone.com/vpsup.htm</a>.
+Это комеpческий пpодyкт. Hе совсем Lex и Yacc но пpинципы положены в основy    те же, т.е. LALR гpамматика. Имеет yдобнyю сpедy pазаpаботки файлов с&nbsp;<br>
+    описанием гpамматики со встpоенным отладчиком. Последняя веpсия 3.0. Я    пользyюсь активно&nbsp;<br>
+ 5. <a href="http://alexm.here.ru">http://alexm.here.ru</a> TPLYH - в комплекте идет русский перевод документации    на настоящий UNIX'овый lex и yacc.  Может быть, поможет понять.&nbsp;
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#6">Какие дефайны использовать для
+определения версии Delphi/CPPB ?<br>
+</a>
+</b></font><font color="#008000">{$IFDEF VER80}</font>  - D1 (Delphi 1.0)<br>
+<font color="#008000">
+{$IFDEF VER90}</font>  - D2<br>
+<font color="#008000">
+{$IFDEF VER93}</font>  - B1 (Builder 1.0)<br>
+<font color="#008000">
+{$IFDEF VER100}</font> - D3<br>
+<font color="#008000">
+{$IFDEF VER110}</font> - B3<br>
+<font color="#008000">
+{$IFDEF VER120}</font> - D4
+</p>
+<p>и т.п...
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#7">Как избавиться от
+сообщения об ошибке 216, иногда возникающей
+при выходе из приложения ?<br>
+</a>
+</font></b> Hужно перед закрытием программы сказать
+IsConsole:=True и телемаркет.<br>
+<br>
+ Сообщение об ошибке не появится. Конечно, она никуда не девается, просто диалог<br>
+не показывается. Hо это нормально. Если при выходе из программы происходит<br>
+сабж, то это происходит уже после всего вашего кода (вообще-то она происходит<br>
+при выгрузке библиотек) и все данные уже сохранены. Юзеры довольны.<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#8">Как работать с очень большими
+числами ?</a></font></b>
+</p>
+<p><a href="http://clisp.cons.org/~haible/documentation/cln/doc/cln.html">
+http://clisp.cons.org/~haible/documentation/cln/doc/cln.html<br>
+</a>О числах любой размерности, и библиотеках для работы с ними.<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#9">Какими особенностями должно
+обладать приложение-скринсэйвер ?<br>
+</a>
+</b></font> сейвеp - это обычная win32 пpога тока с pасшиpением
+.scr {$E SCR}<br>
+ запускается в зависимости от ключа ком стpоки :<br>
+&nbsp;&nbsp;&nbsp; '/s' - собстно запуск сейвеpа<br>
+&nbsp;&nbsp;&nbsp; '/p &lt;hWnd>' - пpевьюшка, hWnd - хэндл pодителя в котоpом пpевьюшку
+показывать<br>
+&nbsp;&nbsp;&nbsp; '/c [&lt;hWnd>]' - конфигуpация, может быть указан pодитель<br>
+&nbsp;&nbsp;&nbsp; '/a &lt;hWnd>' - диалог ввода паpоля (W9x)<br>
+<br>
+ Можно еще почитать Article #19534: Creating a 32-Bit Screen Saver in 32-bit<br>
+ Delphi из Borland Technical Information Database. Там даже пример есть.<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#10">Как преобразовать IDL в PAS ?</a></b></font>
+</p>
+<p> конвертер IDL2PAS :<br>
+<a href="ftp://ftpd.inprise.com/download/visibroker/delphi/vb_delphi.exe">ftp://ftpd.inprise.com/download/visibroker/delphi/vb_delphi.exe</a><br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#11">Дайте пример
+действительно прозрачной формы, работающий
+во всех версиях Windows.<br>
+</a><br>
+</b></font> <b> unit</b> Unit1;</p>
+<p><b>
+ interface</b><br>
+<b>
+ uses</b> Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
+ExtCtrls;<br>
+<b>
+ type</b><br>
+&nbsp;&nbsp;&nbsp; TForm1 = <b>class</b>(TForm)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Timer1: TTimer;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> FormCreate(Sender: TObject);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> Timer1Timer(Sender:
+TObject);<br>
+&nbsp;&nbsp;&nbsp; <b>public</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> CreateParams(<b>var</b> Params: TCreateParams);
+<b>override</b>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> WMEraseBkgnd(<b>var</b> Msg: TMessage);
+<b> message</b> WM_ERASEBKGND;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> WMNCHitTest(<b>var</b> Msg: TWMNCHitTest);
+<b> message</b> WM_NCHITTEST;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> WMMove(<b>var</b> Msg: TMessage);
+<b> message</b> WM_MOVE;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>procedure</b> WMPaint(<b>var</b> Msg: TWMPaint);
+<b> message</b> WM_PAINT;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<br>
+<b>
+ var</b><br>
+&nbsp;&nbsp;&nbsp; Form1: TForm1;<br>
+<br>
+<b>
+ implementation</b><br>
+<br>
+<font color="#008000">
+ {$R *.DFM}</font><br>
+<br>
+<b>
+ procedure</b> TForm1.FormCreate(Sender: TObject);<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>inherited</b>;<br>
+&nbsp;&nbsp;&nbsp; Timer1.Interval := 1; <font color="#008000"> // Minimal time</font><br>
+&nbsp;&nbsp;&nbsp; Timer1.Enabled := TRUE;<br>
+&nbsp;&nbsp;&nbsp; BorderStyle := bsNone;<br>
+&nbsp;&nbsp;&nbsp; SetWindowPos(Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>or</b> SWP_NOSIZE <b> or</b> SWP_NOMOVE);<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.CreateParams(<b>var</b> Params: TCreateParams);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>inherited</b>;<br>
+&nbsp;&nbsp;&nbsp; Params.ExStyle := Params.ExStyle <b> or</b> WS_EX_TRANSPARENT;<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.WMNCHitTest(<b>var</b> Msg: TWMNCHitTest);<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; Msg.Result := HTCAPTION;<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.WMEraseBkgnd(<b>var</b> Msg: TMessage);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; Msg.Result := 1;<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.WMMove(<b>var</b> Msg: TMessage);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>inherited</b>;<br>
+&nbsp;&nbsp;&nbsp; LockWindowUpdate(GetDesktopWindow);<br>
+&nbsp;&nbsp;&nbsp; Repaint;<br>
+&nbsp;&nbsp;&nbsp; LockWindowUpdate(0);<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.WMPaint(<b>var</b> Msg: TWMPaint);<br>
+<b>
+ var</b><br>
+&nbsp;&nbsp;&nbsp; Pen, OldPen: HPen;<br>
+&nbsp;&nbsp;&nbsp; DC: HDC;<br>
+&nbsp;&nbsp;&nbsp; PS: TPaintStruct;<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; DC := BeginPaint(Handle, PS);<br>
+&nbsp;&nbsp;&nbsp; Pen := CreatePen(PS_DASH, 1, RGB(0, 0, 0));<br>
+&nbsp;&nbsp;&nbsp; OldPen := SelectObject(DC, Pen);<br>
+&nbsp;&nbsp;&nbsp; LineTo(DC, 0, 0); LineTo(DC, Width - 1, 0);<br>
+&nbsp;&nbsp;&nbsp; LineTo(DC, Width - 1, ClientHeight - 1);<br>
+&nbsp;&nbsp;&nbsp; LineTo(DC, 0, Height - 1); LineTo(DC, 0, 0);<br>
+&nbsp;&nbsp;&nbsp; SelectObject(DC, OldPen);<br>
+&nbsp;&nbsp;&nbsp; DeleteObject(Pen);<br>
+&nbsp;&nbsp;&nbsp; EndPaint(Handle, PS);<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // All VCL objects must be repainted manually, eg: Button1.Repaint;<br>
+</font><b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.Timer1Timer(Sender: TObject);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; Repaint; <font color="#008000"> // This update needed only for visible parts of drawing</font><br>
+<b>end</b>;<br>
+<br>
+<b>end</b>.<br>
+<br>
+Немного дергается, но впринципе это самый приличный пример
+из виденых мною. Здесь я даже отклонюсь от правил и опубликую
+автора исходника - это Sergey (2:5024/2)</p>
+<hr noshade color="#0000FF">

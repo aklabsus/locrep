@@ -1,0 +1,388 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="5"><b>Список вопросов, прямые
+ответы на которые можно найти в&nbsp;<br>
+ AKdTopic от 8.11.2000</b></font></p>
+<p align="right">Составил : Александр Крамаренко <a href="mailto:(GroupStudio@mail.ru">(GroupStudio@mail.ru</a>).<br>
+Последнюю версию всегда можно найти на <a href="http://www.akhome.da.ru">http://www.akhome.da.ru</a></p>
+<hr>
+<p align="center"><font color="#FF0000"> ВНИМАНИЕ ! </font> От версии к версии может меняться контекст уже существующих<br>
+            вопросов. Поэтому если вы нашли какие-либо ошибки в&nbsp;<br>
+            приведенных ответах, сначала посмотрите последнюю версию<br>
+            AKdTopic и AKTools</p>
+<p align="center"><b><font color="#800000">AKTools не полностью
+документирован&nbsp; в AKdTopic, хотя и содержит
+ответы на множество Ваших вопросов !&nbsp;<br>
+<font size="4">&nbsp;Смотрите комментарии в
+интерфейсных частях модулей ak*.pas.<br>
+</font></font><font color="#800080">(в этой версии
+обновления коснулись только модулей ak*.pas...
+эх, работа, работа...)</font></b></p>
+<hr noshade size="8">
+<p align="center"><i><b>Выберите вопрос, ответ на который
+Вас интересует (вопросы, перечисленные до
+&quot;- - -&quot; описаны в виде текстового ответа,
+после - в виде готовой процедуры либо класса):&nbsp;</b></i></p>
+<hr noshade color="#0000FF">
+<p align="right"><font size="2"><i><span style="background-color: #FFFF00">Желтым
+маркером</span>
+выделены новые либо измененные вопросы.<br>
+<span style="background-color: #00FF00">Зеленым маркером</span>
+выделены вопросы, измененные в предыдущем
+выпуске AKdTopic.<br>
+</i></font></p>
+<p align="left"><br>
+<b>Работа с разнообразными данными.<br>
+</b>- - -<br>
+<a href="akDataUtils.html#51">
+Возвращает ID элемента массива в котором записано
+указанное значение</a> <font color="#008000">(DataInArray)<br>
+</font>
+<a href="akDataUtils.html#52">Возвращает число, записанное в
+указанных битах (от..до) </a><font color="#008000">(GetBits)<span style="background-color: #00FF00"><br>
+</span></font><a href="akDataUtils.html#53">Считает CRC32 указанной строки.
+</a>(GetStringCRC)</p>
+<p align="left">&nbsp;
+</p>
+<p align="left"><br>
+<b>Преобразование разнообразных данных.<br>
+</b><b></b>- - -<br>
+<a href="akDataCvt.html#1">
+Преобразует строку вида "10,5,20,30" в TRECT<font color="#008000">
+ </font></a><font color="#008000">
+(StrToTRECT)</font><br>
+<a href="akDataCvt.html#2">
+Преобразует строку вида "10,51" в TPOINT</a><font color="#008000">
+(StrToTPOINT)</font><br>
+<a href="akDataCvt.html#3">
+Преобразует строку вида
+&quot;font_name,BIU,Size,Color&quot; в TFONT</a>
+<font color="#008000">(StrToTFONT)</font><br>
+<a href="akDataCvt.html#4">
+Преобразует строку вида &quot;Black&quot; или &quot;#FFFFFF&quot; в
+TCOLOR</a> <font color="#008000">(StrToTCOLOR)</font><br>
+<a href="akDataCvt.html#5">
+Преобразует массив в строку, разделяя элементы запятыми</a>
+<font color="#008000">(ArrayToStr)</font><br>
+<a href="akDataCvt.html#6">
+Преобразует строку в массив</a><font color="#008000">  (StrToArray)</font>
+</p>
+<p align="left">&nbsp;
+</p>
+<p align="left"><b>Работа с файлами и файловой
+системой.<br>
+</b> <a href="akFileUtils.html#1"> Как создать файлы с уникальными именами ?<br>
+</a><a href="akFileUtils.html#2">
+ Как программно создать ярлык?</a><br>
+<a href="akFileUtils.html#3">
+ Как поместить иконку на Рабочий стол ?<br>
+</a><a href="akFileUtils.html#4">
+ Как пpинимать яpлыки пpи пеpетягивании их на контpол ?<br>
+</a>
+- - -<br>
+<a href="akFileUtils.html#51">
+Возвращает имя файла без расширения</a>&nbsp;<font color="#008000">(GetFileNameWOExt)</font><br>
+<a href="akFileUtils.html#52">
+Добавляет &quot;\&quot; к имени директории, если это нужно</a>
+<font color="#008000">(GetDirectory)</font><br>
+<a href="akFileUtils.html#53">
+ Удаляет букву диска от имени файла </a> <font color="#008000">(GetRelativeDirectory)</font><br>
+<a href="akFileUtils.html#54">
+Возвращает полный путь к файлу по его относительному пути
+<font color="#008000"></font></a>
+<font color="#008000">(CompletePath)</font><br>
+<a href="akFileUtils.html#55">
+Удаляет из строки все двойные
+      &quot;\&quot; и &quot;/&quot; </a> <font color="#008000">(RepairPathName)</font><br>
+<a href="akFileUtils.html#56">
+Сравнивает два пути, игнорируя регистр букв и лишние
+      &quot;\&quot;, "/".</a> <font color="#008000">(CompareDirectoryes)</font><br>
+<a href="akFileUtils.html#57">
+Создает файл, если таковой не существует </a> <font color="#008000">(CreateFileIfNotExists)</font><br>
+<a href="akFileUtils.html#58">
+Получить имя временного файла (без расширения)
+</a>
+<font color="#008000">(CreateTempFileName)<br>
+</font><a href="akFileUtils.html#59">Как получить список всех файлов во вложенных
+директориях ?</a>  <font color="#008000">(TCustomTreeFileList)</font><font color="#00FF00"><br>
+</font><a href="akFileUtils.html#60">Как получить
+уникальное имя файла (типа &quot;Untitled-2.txt&quot;) ?</a>
+(MakeUniqueFileName)<font color="#00FF00"><br>
+</font> <font color="#008000"><br>
+</font><br>
+</p>
+<p align="left">
+<br>
+<b>Работа с графикой.<br>
+</b> <a href="akGraph.html#1"> Как правильно при выводе на экран обрезать имя файла по длине ?</a><br>
+- - -<br>
+</p>
+<p align="left"><b>Создание и работа с логами.<br>
+</b>- - -<br>
+<a href="akLogUtils.html#1">Работа с файловыми логами </a><font color="#008000">(TFileLog)</font></p>
+<p align="left">&nbsp;</p>
+<p align="left"><b>Работа со строками и текстом.<br>
+</b>- - -<br>
+<a href="akStrUtils.html#51">
+Возвращает правый сегмент строки с порядковым номером N
+</a>
+<font color="#008000">(GetRightSegment)</font><br>
+<a href="akStrUtils.html#52">
+ Возвращает левый сегмент строки с порядковым номером N</a>
+<font color="#008000">(GetLeftSegment)</font><br>
+<a href="akStrUtils.html#53">
+Криптует строку</a> <font color="#008000">(CryptString)</font><br>
+<a href="akStrUtils.html#54">
+Дешифрует криптованную строку<font color="#008000">  </font></a><font color="#008000"> (UnCryptString)</font><br>
+<a href="akStrUtils.html#55">
+Проверяет, что в строке нет символов с кодом больше
+#127<font color="#008000">  </font></a><font color="#008000"> (IsLat)</font><br>
+<a href="akStrUtils.html#56">
+Преобразует OEM-&gt;ANSI</a> <font color="#008000">(StrOEMToANSI)</font><br>
+<a href="akStrUtils.html#57">
+Преобразует ANSI-&gt;OEM</a><font color="#008000">  (StrANSItoOEM)</font><br>
+<a href="akStrUtils.html#58">
+Возвращает строку, разделенную по словам</a> <font color="#008000">(GetStrWords)</font><br>
+<a href="akStrUtils.html#59">
+Проверяет, чтобы все указанные слова
+существовали в строке на небольшом
+расстоянии друг от друга</a> <font color="#008000">(WordsIsNear)</font><br>
+<a href="akStrUtils.html#60">
+Проверяет, что все указанные слова существуют в строке
+</a>
+<font color="#008000">(WordsIn)</font><br>
+<a href="akStrUtils.html#61">
+Удаляет указанные символы из строки</a> <font color="#008000">(TrimIn)</font><br>
+<a href="akStrUtils.html#62">
+Перобразует текст в строку, путем удаления из него всех символов
+#13, #10 </a> <font color="#008000">(TextToLine)</font><br>
+<a href="akStrUtils.html#63">
+Возвращает инициалы имени</a> <font color="#008000">(GetNameLT)</font><br>
+<a href="akStrUtils.html#64">
+Возвращает позицию первого символа, отличного от
+Ch </a> <font color="#008000">(NotCharPos)</font><br>
+<a href="akStrUtils.html#65">
+Возвращает строку, в которой все символы c1 заменены на
+c2.</a> <font color="#008000">(ReplaceChar)</font><br>
+<a href="akStrUtils.html#66">
+Разбивает строку на подстроки
+фиксированной длины <font color="#008000">
+</font></a> <font color="#008000">(WordWrapStr)<br>
+</font><a href="akStrUtils.html#67">Ищет
+последнее вхождение указанной подстроки в
+строку</a>
+(PosR) <font color="#008000"><br>
+</font></p>
+<p><b>Работа с COM/OLE<br>
+</b> <a href="akCOMUtils.html#1"> Как обрабатывать ошибки в дельфовых COM-объектах ?</a><br>
+<a href="akCOMUtils.html#2">
+ Как поместить объект из Shell Namespace (например, My
+ Computer)     в свою форму ?</a><a href="akCOMUtils.html#3"><br>
+<span style="background-color: #FFFF00">Как определить зарегистрирован-ли в системе ActiveX component зная
+его GUID ?<br>
+</span></a>
+- - -<br>
+</p>
+<b>Работа с VCL.<br>
+</b> <a href="akVCLUtils.html#1"> Как заставить появляться хинт, когда я захочy ?<br>
+</a><a href="akVCLUtils.html#2">
+ Как таскать окно за нужный мне элемент на нём?<br>
+</a><a href="akVCLUtils.html#3">
+ Как перетаскивать форму за её любое место.</a><br>
+<a href="akVCLUtils.html#4">
+ Как передать фокус следующему контролу ?</a><br>
+<a href="akVCLUtils.html#5">
+ Как определить есть ли некоторое свойство(например,
+Hint) у объекта ?</a><br>
+<a href="akVCLUtils.html#6">
+ Как вызвать модальную форму и обеспечить возврат ее параметров ?</a><br>
+<a href="akVCLUtils.html#7">
+ Зачем нужен TAction ?</a><br>
+<a href="akVCLUtils.html#8">
+ Как сделать Redo в RichEdit ?</a><br>
+<a href="akVCLUtils.html#9">
+ Как использовать форму из DLL ?</a><br>
+<a href="akVCLUtils.html#10">
+ Как запретить показ курсора в TEdit и ему подобных контролах ?</a><br>
+<a href="akVCLUtils.html#11">
+ Как сделать, чтобы нормально работали русские Hot-key ?</a><br>
+<a href="akVCLUtils.html#12">
+ Как изменить системное меню окна ?</a><a href="akVCLUtils.html#13"><br>
+Как послать некое сообщение всем формам ?<br>
+</a><a href="akVCLUtils.html#14">Как
+сделать MDI-форме&nbsp; фон в виде картинки ?<br>
+</a><br>
+- - -<br>
+<a href="akVCLUtils.html#51">
+Добавление мультиязыковой поддержки в
+своих проиложениях</a><font color="#008000">  (TLanguageLoader)</font><br>
+<a href="akVCLUtils.html#52">
+Показывает стандартный хинт над текущим контролом.
+</a>
+<font color="#008000">(UpdateHint)</font><br>
+<a href="akVCLUtils.html#53">
+Возвращает предка (в том числе и дальнего) объекта
+TTreeNode </a> <font color="#008000">(GetNodeFrom)<br>
+</font><a href="akVCLUtils.html#56">Возвращает узел
+древовидной структуры, путь к которой указан в
+Path</a>.(GetNodeByPath)<br>
+<a href="akVCLUtils.html#57">Возвращает путь к элементу
+TTreeNode</a>   (GetNodePath)<br>
+<a href="akVCLUtils.html#58">Возвращает список всех "детей"&nbsp;
+элемента childOf деревовидной структуры</a>   (GetNodeChilds)<br>
+<a href="akVCLUtils.html#59">Ищет в списке TListItems элемент
+с указанным заголовком </a>(GetItemByCaption)<br>
+<a href="akVCLUtils.html#55">
+Показывает диалог копирайтов после набора слова
+&quot;ISDEVELOPEDBY&quot; </a> <font color="#008000">(CopyrightChecker)<br>
+</font>
+<a href="akVCLUtils.html#60">Сохраняет
+строку переменной длины в стрим</a> 
+ (SaveStringToStream)<br>
+<a href="akVCLUtils.html#61">Загружает строку
+переменной длины из стрима</a>  (ReadStringFromStream)<br>
+<br>
+<b><br>
+Работа с системой. Системные функции.<br>
+</b><a href="akSysCover.html#1">Как очистить коpзинy?</a><br>
+<a href="akSysCover.html#2">
+ Как поместить иконку в Tray ?&nbsp;</a><br>
+<a href="akSysCover.html#3">
+ Как получить доступ к иконкам десктопа?</a><br>
+<a href="akSysCover.html#4">
+ Как получить результат работы консольной программы ?</a><br>
+<a href="akSysCover.html#5">
+Дайте пример установки оконного Hook.</a><br>
+<a href="akSysCover.html#6">
+ Как узнать сколько памяти программа кушает ?</a><br>
+<a href="akSysCover.html#7">
+ Как убрать из трэя икноки "мертвых" приложений ?</a><br>
+<a href="akSysCover.html#17">Как
+сделать, чтобы мое приложение запустилось
+до загрузки десктопа ?<br>
+</a><a href="akSysCover.html#18">Как
+записать в клипборд русский текст так,
+чтобы он нормально вставился в MS Word ?<br>
+</a>- - -<br>
+<a href="akSysCover.html#51">
+Возвращает хандл указанного процесса. </a> <font color="#008000">(GetProcessHandle)</font><br>
+<a href="akSysCover.html#52">
+Возвращает имя процесса ProcessID</a><font color="#008000"> 
+(GetProcessInfo)</font><br>
+<a href="akSysCover.html#53">
+Делает окно hndl полупрозрачным. Только для Win2k.<font color="#008000">
+ </font></a><font color="#008000">
+(SetWindowTransp)</font><br>
+<a href="akSysCover.html#54">
+Возвращает имя системной директории</a> <font color="#008000">(GetSystemDir)</font><br>
+<a href="akSysCover.html#55">
+Аналог Application.ProcessMessages для консольных
+программ</a> <font color="#008000">(ConsoleProcessMessages)</font><br>
+<a href="akSysCover.html#56">
+Регистрирует или унрегистрирует DLL </a> <font color="#008000">(RegisterDLL)</font><br>
+<a href="akSysCover.html#57">
+Возвращает время компиляции проекта</a> <font color="#008000">(GetBuildTime)<br>
+</font><a href="akSysCover.html#58">Как создать статическую переменную,
+видимую из других приложений ? </a> (TChannel) <font color="#008000"><br>
+</font>
+<p align="left"><b>Клавиатура и мышь</b><br>
+<a href="akSysCover.html#8">
+Как программно переключать раскладку клавиатуры?</a><a href="akSysCover.html#5"><br>
+Как отловить нажатия клавиш для всех
+процессов в системе?</a><br>
+<a href="akSysCover.html#9">
+ Как включать/выключать лампочки на numlock,
+capslock, etc... ?</a><br>
+<a href="akSysCover.html#10">
+ Как сделать имитацию ввода с клавиатуры для дос-программы ?&nbsp;<br>
+</a><a href="akSysCover.html#19">Как
+послать нажатие, например, ALT+F другой
+программе ?<br>
+</a>
+- - -<br>
+<br>
+</p>
+<p align="left"><b>Окна и диалоги<br>
+</b><a href="akSysCover.html#11">Как минимизиpовать все запущеные окна ?</a><br>
+<a href="akSysCover.html#12">
+ Как вывести окно свойств компьютеpа?</a><br>
+<a href="akSysCover.html#13">
+ Как вызывать диалог выбора _фолдеров_ ?</a><br>
+<a href="akSysCover.html#14">
+ Как пpогpамно вывести окно свойств экpана?</a><br>
+<a href="akSysCover.html#15">
+ Как сделать MS-Style диалог "О программе" ?</a><br>
+<a href="akTotaly.html#11">
+ Дайте пример действительно прозрачной формы, работающий во     всех версиях
+ Windows.<br>
+</a><a href="akSysCover.html#20">Как сделать русский MESSAGEDLG
+?</a><br>
+<br>
+- - -<br>
+<br>
+<br>
+<b><br>
+Internet</b></p>
+<p> <a href="akSysCover.html#16"> Как вызвать браузер/создать письмо по указанному адресу ?</a><br>
+- - -<br>
+</p>
+<p><b>Общие вопросы</b><br>
+<a href="akTotaly.html#1">
+Как работать с плагинами ?</a><br>
+<a href="akTotaly.html#2">
+ Как вытащить VersionInfo из свойств проекта ?</a><br>
+<a href="akTotaly.html#3">
+ Как DLL правильно заполнить строковыми ресурсами, и потом достать их ?<br>
+</a><a href="akTotaly.html#4">
+ С каким числовым форматом Delphi работает быстрее всего ?<br>
+</a><a href="akTotaly.html#5">
+ А где найти аналоги lex, yacc для паскаля ?<br>
+</a><a href="akTotaly.html#6">
+ Какие дефайны использовать для определения версии
+Delphi/CPPB ?<br>
+</a><a href="akTotaly.html#7">
+ Как избавиться от сообщения об ошибке 216, иногда возникающей при выходе     из приложения ?<br>
+</a><a href="akTotaly.html#8">
+ Как работать с очень большими числами ?<br>
+</a><a href="akTotaly.html#9">
+ Какими особенностями должно обладать приложение-скринсэйвер ?<br>
+</a><a href="akTotaly.html#10">
+ Как преобразовать IDL в PAS ?<br>
+</a>
+- - -<br>
+<br>
+<br>
+<b>Разное<br>
+</b>- - -<br>
+<a href="akMisc.html#51">
+Шифрует число</a> <font color="#008000">(CryptInteger)</font><br>
+<a href="akMisc.html#52">
+Дешифрует число</a> <font color="#008000">(UnCryptInteger)</font><br>
+<a href="akMisc.html#53">
+Вычисляет расстояние между двумя точками </a> <font color="#008000">(DistOf)</font><br>
+<a href="akMisc.html#54">
+Возвращает число дней в месяце <font color="#008000"></font></a> <font color="#008000">(DaysInMonth)</font><br>
+<a href="akMisc.html#55">
+Добавляет к дате указанное число лет/месяцев/дней
+</a>
+<font color="#008000">(DateAdd)</font>
+</p>
+<hr>
+<p>Начиная с первого сентября 2000ого года я
+начинаю вести информацию о людях,
+являющихся невольными соавторами AKdTopic (в
+алфавитном порядке) :<br>
+<br>
+Anatoly Podgoretsky <a href="mailto:(anatoly@podgoretsky.com">(anatoly@podgoretsky.com</a>)<br>
+Tolik Tentser <a href="mailto:(tt@katren.ru">(tt@katren.ru</a>)<br>
+Viktor Yevdokimov (2:5068/3.12)</p>
+<hr>
+<p align="right">&nbsp;</p>
+<p align="right">AKdTopic (c) AK - 2000<br>
+</p>
+<p align="left">&nbsp;</p>

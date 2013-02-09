@@ -1,0 +1,565 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с VCL</b></u></font></p>
+<hr>
+<p><b><font size="4"><a name="#1">Как заставить появляться
+хинт, когда я захочy ?<br>
+</a></font></b><font color="#008000">{Появление}</font><br>
+<b>if</b> h&lt;>nil <b>then</b> H.ReleaseHandle; <font color="#008000"> {если чей-то хинт yже был, то его погасить}</font><br>
+H:=THintWindow.Create(Окно-владелец хинта);<br>
+H.ActivateHint(H.CalcHintRect(...),'hint hint nint');<br>
+....<br>
+<font color="#008000">
+{UnПоявление :) - это возможно пpидется повесить на таймеp, котоpый бyдет<br>
+обнyляться пpи каждом новом появлении хинта}</font><br>
+<b>if</b> h&lt;>nil <b>then</b> H.ReleaseHandle;<br>
+<br>
+По-дpyгомy задача тоже pешаема, но очень плохо. (см исходник объекта
+TApplication, он как pаз хинтами заведyет.<br>
+<br>
+Также может частично помочь функция <a href="#52">UpdateHint</a></p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#2">Как таскать окно за
+нужный мне элемент на нём?<br>
+</a></b></font><b>procedure</b> TForm1.Panel1MouseDown(Sender: TObject; Button:
+TMouseButton; Shift: TShiftState; X, Y: Integer);<br>
+<b>
+const</b><br>
+&nbsp;&nbsp;&nbsp; SC_DragMove = $F012;  { a magic number }<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; ReleaseCapture;<br>
+&nbsp;&nbsp;&nbsp; panel1.perform(WM_SysCommand, SC_DragMove, 0);<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#3">Как перетаскивать форму
+за её любое место.<br>
+</a></font></b><b>procedure</b> TForm1.WMNCHitTest(<b>var</b> Message : TWMNCHitTest);<br>
+<b>
+begin</b><br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> PtInRegion(rgn, Message.XPos, Message.YPos) <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Message.Result := HTCAPTION<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Message.Result := HTNOWHERE;<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#4">Как передать фокус
+следующему контролу ?<br>
+</a></b></font>Perform(WM_NEXTDLGCTL, 0, 0).</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#5">Как определить есть ли
+некоторое свойство(например, Hint) у объекта ?<br>
+</a></b></font>TypInfo .GetPropInfo (My_Component.ClassInfo, 'Hint') &lt;> nil<br>
+  Таким образом можно узнать наличие таковой published "прОперти".
+А вот если это не поможет, то можно и "ломиком" поковыряться
+посредством FieldAddress. Однако этот метод дает адрес полей,<br>
+которые перечисляются сразу после объявления класса как в unit'ых форм.
+А вот ежели "прОперть" нигде не "засветилась"
+(published) то фиг ты ее достанешь.  А модифицировать значение можно посредством прямой записи по
+адресу FieldAddress (крайне нежелательно!) либо используя цивилизованный
+способы, перечисленные в unit'е TypInfo.<br>
+<br>
+Модифицировать кучу объектов можно организовав цикл перебораоных с получением в цикле PropertyInfo объекта и записи в объект
+на основе PropInfo.</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#6">Как вызвать модальную
+форму и обеспечить возврат ее параметров ?<br>
+<br>
+</a></b></font><b>procedure</b> TMyDialogBox.OKButtonClick(Sender: TObject);<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; ModalResult := mrOK;<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TMyDialogBox.CancelButtonClick(Sender: TObject);<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; ModalResult := mrCancel;<br>
+<b>end</b>;<br>
+<br>
+<font color="#008000">// Пример обработки результат ниже :<br>
+</font><b>
+procedure</b> TForm1.Button1Click(Sender: TObject);<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> MyDialogBox1.ShowModal = mrOK <b> then</b><br>
+&nbsp;&nbsp;&nbsp; Beep;<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#7">Зачем нужен TAction ?<br>
+</a></b></font>    Hужны они для синхронизации свойств Enable, Checked,
+ImageIndex, Caption, Hint, OnClick и т.п. различных контролов. Hаиболее часто
+применяется для кнопок и элементов меню. Сильно облегчает разработку
+дружественных сред, когда до какого-то действия можно добраться через кнопку<br>
+toolbar'а, MainMenu'шку и PopupMenu'шку:&nbsp;<br>
+    1. Создал Action, проставил св-ва (Caption, Hint, ImageIndex и т.п.)<br>
+    2. Прописал действие на OnExecute (если не лениться и задавать
+нормальные имена Action'ам, то процедуры тоже будут иметь нормальные имена)<br>
+    3. Прописал на TAction.OnUpdate условия для Enabled, Checked и т.п.:<br>
+<b>
+procedure</b> TForm1.DBConnectUpdate(Sender: TObject);<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; Checked := Database1.Connected;<br>
+&nbsp;&nbsp;&nbsp; Enabled := (FUserName + FPassword) &lt;> '';<br>
+<b>end</b>;<br>
+    4. Проставил всем компонентам, активизирующим это действие, свойства<br>
+Action и, если надо, ImageList.<br>
+    Без экшинсов тебе пришлось бы всем контролам проставлять Caption'ы,<br>
+хинты, имагиндексы и т.п.. Прописывать везде, где надо, куски типа<br>
+    BtnConnect.Enabled := экспр<br>
+    PUConnect.Enabled := экспр<br>
+    PDConnect.Enabled := экспр<br>
+    BtnConnect.Checked:= др.экспр<br>
+    PUConnect.Checked := др.экспр<br>
+    PDConnect.Checked := др.экспр<br>
+<br>
+и следить за тем, чтобы все кнопки/меню итемы и т.п. соответствовали:<br>
+пользователь сделал изменение, хочет сохранить, а у него в менюшке по правой
+кнопке пункт Save - запрещен. И расскажи ему, что у него в
+MainMenu/File/Save - разрешился, а этот - "забыл".<br>
+    Далее, можно спокойно "нарисовать" этот ActionList с Action'ами,
+набросать кнопок на один ToolBar, проработать функциональность, а уже потом
+не напрягаясь и не думая, где какой код вставить, "дорисовывать" менюшки и
+кнопки. При этом, когда надо одну кнопку грохнуть, а другую добавить - это
+не напрягает, т.к. ничего важного элемент кнопки не содержит. Всю информацию
+о поведении этой кнопки содержит соответствующий
+Action.&nbsp;<br>
+    Вывод: снижает трудозатраты на разработку пользовательского интерфейса -
+снижает вероятность ошибки. Hакладные расходы оценить не пытался (они
+безусловно есть), но думаю, что они в большинстве случаев не существенны.</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#8">Как сделать Redo в RichEdit ?<br>
+</a></b></font>Memo1.Perform(EM_UNDO, 0, 0);<br>
+<br>
+If you want to check whether undo is available, so you can<br>
+enable or disable a menu item choice, you can check the<br>
+"Undo status" like this:<br>
+<br>
+<b>
+If</b> Memo1.Perform(EM_CANUNDO, 0, 0) &gt; 0 <b> then</b> <b> begin</b><br>
+<font color="#008000">
+  {Undo is possible}</font><br>
+<b>end</b>;<br>
+<br>
+To preform a "Redo" simply "Undo" a second time.</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#9">Как использовать форму
+из DLL ?<br>
+</a></font></b><br>
+Это файл Form.dpr, из которого получается DLL:<br>
+<br>
+<b>
+ library</b> Form;<br>
+<b>
+ uses</b>&nbsp; Classes, Unit1 <b> in</b><b> </b> 'Unit1.pas' {Form1};<br>
+<b>
+ exports</b><br>
+&nbsp;&nbsp;&nbsp; CreateMyForm,<br>
+&nbsp;&nbsp;&nbsp; DestroyMyForm;<br>
+<b>end</b>.<br>
+<br>
+Это его Unit1:<br>
+<br>
+<b>
+ unit</b> Unit1;<br>
+<b>
+ interface</b><br>
+<font color="#008000">
+ [раздел uses и определение класса Form1 поскипаны]<br>
+</font><b>
+ procedure</b> CreateMyForm(AppHandle : THandle); stdcall;<br>
+<b>
+ procedure</b> DestroyMyForm; stdcall;<br>
+<b>
+ implementation<br>
+</b><br>
+<font color="#008000">
+ {$R *.DFM}<br>
+</font><b>
+ procedure</b> CreateMyForm(AppHandle : THandle);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; Application.Handle:=AppHandle;<br>
+&nbsp;&nbsp;&nbsp; Form1:=TForm1.Create(Application);<br>
+&nbsp;&nbsp;&nbsp; Form1.Show<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> DestroyMyForm;<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; Form1.Free<br>
+<b>end</b>;<br>
+<b>end</b>.<br>
+<br>
+<br>
+Это UnitCall вызывающего EXE-шника:<br>
+<br>
+<b>
+ unit</b> UnitCall;<br>
+<b>
+ interface</b><br>
+<font color="#008000">
+ [раздел uses и определение класса Form1 поскипаны]<br>
+</font><b>
+ procedure</b> CreateMyForm(AppHandle : THandle); <b>stdcall</b>; <b> external</b> 'Form.dll';<br>
+<b>
+ procedure</b> DestroyMyForm; <b>stdcall</b>; <b> external</b> 'Form.dll';<br>
+<br>
+<b>
+ implementation</b><br>
+<font color="#008000">
+ {$R *.DFM}<br>
+</font><b>
+ procedure</b> TForm1.Button1Click(Sender: TObject);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; CreateMyForm(Application.Handle)<br>
+<b>end</b>;<br>
+<br>
+<b>
+ procedure</b> TForm1.FormClose(Sender: TObject; <b> var</b> Action: TCloseAction);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; DestroyMyForm<br>
+<b>end</b>;<br>
+<b>end</b>.<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#10">Как запретить показ
+курсора в TEdit и ему подобных контролах ?<br>
+</a></b></font> Создайте своего потомка с обработчиками:<br>
+<b>
+   procedure</b> WMPaint(<b>var</b> Msg: TMessage); <b> message</b> WM_Paint;<br>
+<b>
+   procedure</b> WMSetFocus(<b>var</b> Msg: TMessage); <b> message</b> WM_SetFocus;<br>
+<b>
+   procedure</b> WMNCHitTest(<b>var</b> Msg: TMessage); <b> message</b> WM_NCHitTest;<br>
+<br>
+ в которых вызывайте:<br>
+<b>inherited</b>;<br>
+   HideCaret(Handle);<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#11">Как сделать, чтобы
+нормально работали русские Hot-key ?<br>
+</a></b></font> В OnKeyPress переводить английские кнопки в русские самостоятельно,&nbsp;<br>
+ безотносительно к раскладке.<br>
+<br>
+<b>
+ function</b> ConvertChar(C: Char): Char;<br>
+<b>
+ const</b><br>
+&nbsp;&nbsp;&nbsp; Eng = 'qwertyuiop[]asdfghjkl;''zxcvbnm,.QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM&lt;>';<br>
+&nbsp;&nbsp;&nbsp; Rus = 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕHГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ';<br>
+<b>
+ var</b><br>
+&nbsp;&nbsp;&nbsp; I: Integer;<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; I := Pos(C, Eng);<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>if</b> I > 0 <b> then</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Result := Rus[I]<br>
+<b>&nbsp;&nbsp;&nbsp;</b> <b>else</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Result := C;<br>
+<b>end</b>;<br>
+</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#12">Как изменить системное
+меню окна ?<br>
+<br>
+</a></b></font><b>procedure</b> TMainWindow.WMSysCommand( <b> var</b> Msg : TWMSysCommand );<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; MsgBoxParams : TMsgBoxParams;<br>
+&nbsp;&nbsp;&nbsp; S : String;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>inherited</b> ;<br>
+&nbsp;&nbsp;&nbsp; <b>if</b> Msg.CmdType = SC_ABOUT <b> then</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>with</b> MsgBoxParams <b> do</b> <b> begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FillChar( MsgBoxParams, SizeOf( MsgBoxParams), 0 );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cbSize := SizeOf(MsgBoxParams);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hwndOwner := Handle;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hInstance := SysInit.hInstance;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lpszText  := 'Test CD для Windows 95. Версия 1.0'#13+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Copyright (c) 1997 г. by TAL'#13;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lpszCaption := 'О программе ...';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dwStyle := MB_USERICON;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lpszIcon := 'MAINICON';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+MessageBoxIndirect( MsgBoxParams );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TMainWindow.FormCreate(Sender: TObject);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; hMenu : THandle;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; hMenu := GetSystemMenu( Handle, FALSE );<br>
+&nbsp;&nbsp;&nbsp; AppendMenu( hMenu, MF_SEPARATOR, 0, NIL );<br>
+&nbsp;&nbsp;&nbsp; AppendMenu( hMenu, MF_STRING, SC_ABOUT, 'О программе ...' );<br>
+ ...<br>
+<b>end</b>;
+<font size="4"><b><br>
+</b></font></p>
+<hr noshade color="#0000FF">
+<p>
+<font size="4"><b><a name="#13">Как послать некое
+сообщение всем формам ?<br>
+</a></b></font><b>var</b><br>
+I: Integer;<br>
+M: TMessage;<br>
+...<br>
+<b>
+with</b> M <b> do</b> <b> begin</b><br>
+Message := ...<br>
+...<br>
+<b>end</b>;<br>
+<br>
+<b>
+for</b> I := 0 <b> to</b> Pred(Screen.FormCount) <b> do</b> <b> begin</b><br>
+&nbsp;&nbsp;&nbsp; PostMessage( Forms[I].Handle, ... );<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Если надо и всем чилдам</font><br>
+&nbsp;&nbsp;&nbsp; Forms[I].Broadcast( M );<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a href="#13" name="#14"><font color="#000000">Как
+сделать MDI-форме&nbsp; фон в виде картинки ?<br>
+</font></a></b></font><br>
+ Тyт попросили более подробно осветить этy темy. Вот пример.<br>
+ 1. Hадо ловить не WM_PAINT a  WM_ERASEBKGND<br>
+ 2. При разрешенном скроллинге приходится перерисовывать весь фон :-((<br>
+ 3. Ключевое слово - ClientHandle при переопределении оконной процедyры.<br>
+<br>
+ { Private declarations }<br>
+ bmW, bmH : Integer;<br>
+ FClientInstance,<br>
+ FPrevClientProc : TFarProc;<br>
+ PROCEDURE ClientWndProc(VAR Message: TMessage);<br>
+<br>
+PROCEDURE TForm1.ClientWndProc(VAR Message: TMessage);<br>
+VAR Ro, Co : Word;<br>
+begin<br>
+<br>
+with Message do<br>
+case Msg of<br>
+WM_ERASEBKGND:<br>
+begin<br>
+FOR Ro := 0 TO ClientHeight DIV bmH DO<br>
+FOR Co := 0 TO ClientWIDTH DIV bmW DO<br>
+BitBlt(TWMEraseBkGnd(Message).DC,<br>
+Co*bmW, Ro*bmH, bmW, bmH,<br>
+Image1.Picture.Bitmap.Canvas.Handle,<br>
+0, 0, SRCCOPY);<br>
+Result := 1;<br>
+end;<br>
+WM_VSCROLL,<br>
+WM_HSCROLL :<br>
+begin<br>
+Result := CallWindowProc(FPrevClientProc,<br>
+ClientHandle, Msg, wParam, lParam);<br>
+InvalidateRect(ClientHandle, NIL, True);<br>
+end;<br>
+else<br>
+Result := CallWindowProc(FPrevClientProc,<br>
+ClientHandle, Msg, wParam, lParam);<br>
+end;<br>
+end;<br>
+<br>
+procedure TForm1.FormCreate(Sender: TObject);<br>
+begin<br>
+<br>
+bmW := Image1.Picture.Width;<br>
+bmH := Image1.Picture.Height;<br>
+FClientInstance := MakeObjectInstance(ClientWndProc);<br>
+FPrevClientProc := Pointer(<br>
+GetWindowLong(ClientHandle, GWL_WNDPROC));<br>
+SetWindowLong(ClientHandle, GWL_WNDPROC,<br>
+LongInt(FClientInstance));<br>
+end;<br>
+<br>
+</p>
+<hr noshade color="#0000FF" size="8">
+<p><font size="4"><b><a name="#51">Добавление
+мультиязыковой поддержки в своих
+приложениях</a><font color="#008000"> (TLanguageLoader)<br>
+</font></b> </font>В модуле akVCLUtils определен класс
+TLanguageLoader, Правила его использования
+приведены ниже :</p>
+<p><b>procedure</b> Internationalize(cmp: TComponent; LanguageFile:String);<br>
+<b>
+ begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>with</b> TLanguageLoader.Create <b> do</b><br>
+&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LoadFromFile(cmp, LanguageFile);<br>
+&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Free;<br>
+&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;<br>
+<br>
+Использовать :<br>
+<br>
+Internationalize(Form1, 'russian.lng');&nbsp;<br>
+<br>
+ Языковой файл может выглядить так :<br>
+<br>
+<font color="#000080">
+ ============== russian.lng ================<br>
+ ; Language file. Russian.<br>
+<br>
+  [MAIN]<br>
+  LangugeID = "Russian"<br>
+  LanguageDesc = "Русский"<br>
+<br>
+  [FORM1]&nbsp;<br>
+  cpCfgCaption = "Настройки внедорожной мыши"<br>
+  cpCfgMsg = "Нажмите кнопку далее\n для начала настройки..."<br>
+  bOk = "Ок"<br>
+  bCancel = "Отменить"<br>
+  tbMain = "Основные"<br>
+  tbInterface = "Интерфейс"<br>
+  tbTasks = "Задачи"<br>
+  tbAbout = "О программе"<br>
+ ===========================================</font><br>
+<br>
+ В названии секции указвается имя формы (TForm.Name)<br>
+ В самой программе все текстовые свойства прописываются в&nbsp;<br>
+ символьных полях, но заключенные в квадратные скобки:<br>
+  Label1.Caption := '[cpCfgCaption]';<br>
+  Button1.Caption := '[bOk]';<br>
+  ...<br>
+<br>
+ Вместо символа #10 (возврат каретки) можно использовать<br>
+ комбинацию &quot;\n&quot;.<br>
+<br>
+описано : akVCLUtils
+</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#52"><br>
+Показывает стандартный хинт над текущим
+контролом. <font color="#008000">(UpdateHint)<br>
+</font></a></font></b> procedure UpdateHint;<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#53">Возвращает предка (в том
+числе и дальнего) объекта TTreeNode <font color="#008000">(GetNodeFrom)<br>
+</font></a></font></b> function GetNodeFrom(obj, childOf: TTreeNode):TTreeNode;<br>
+&nbsp;&nbsp;&nbsp; obj - объект, предок которого
+ищется.<br>
+&nbsp;&nbsp;&nbsp; childOf - родитель предка.&nbsp;<br>
+&nbsp;&nbsp;&nbsp; result - указатель на предка, либо nil,
+если его не существует.<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><br>
+<a name="#55">Показывает диалог копирайтов после
+набора слова &quot;ISDEVELOPEDBY&quot; <font color="#008000">(CopyrightChecker)</font></a><font color="#008000"><br>
+</font></font></b> function CopyrightChecker(var Msg: tagMSG; Prj:String):Boolean;<br>
+Поместите эту функцию в обработчик ApplicationMessages.OnMessage<br>
+&nbsp;&nbsp;&nbsp; Msg и tagMsg - соответствующие
+параметры обработчика OnMessage()<br>
+<br>
+Примечание : текст, выводимый данной
+функцией, Вы должны предварительно
+записать в переменную CprText.<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font color="#000000" size="4"><a name="#56"> Возвращает узел
+древовидной структуры, путь к которой указан в
+Path</a></font><font color="#008000" size="4"><a name="#56">.</a>(GetNodeByPath)</font></b><br>
+ function GetNodeByPath(Path:String; Nodes:TTreeNodes):TTreeNode;<br>
+&nbsp;&nbsp;&nbsp; Path - путь к узлу, например &quot;Программрование\Borland\Delphi&quot;<br>
+&nbsp;&nbsp;&nbsp; Nodes - структура узлов, по которым
+производится поиск (TTreeView.Items)<br>
+&nbsp;&nbsp;&nbsp; result - указатель на узел, указнный
+в Path, либо nil, если такового не существует.</p>
+<p>Примечание : элементы пути разделяются символом
+&quot;\&quot;, а сами элементы являются
+заголовками соответствующих узлов TTreeNode.<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font color="#000000" size="4"><a name="#57">Возвращает путь
+к элементу TTreeNode</a></font><font color="#008000" size="4"><a name="#57">
+</a>(GetNodePath)<br>
+</font></b> function GetNodePath(Node: TTreeNode):String;<br>
+&nbsp;&nbsp;&nbsp; Node - элемент, путь к которому
+нужно узнать<br>
+&nbsp;&nbsp;&nbsp; result - строка, указывающая путь к
+элементу.</p>
+<p>Примечание : элементы пути разделяются символом
+&quot;\&quot;, а сами элементы являются
+заголовками соответствующих узлов TTreeNode.
+Результат функции можно использовать в
+функции GetNodeByPath<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font color="#000000" size="4"><a name="#58"> Возвращает список
+всех "детей"&nbsp; указанного элемента деревовидной структуры</a></font><font color="#008000" size="4"><a name="#58">
+</a>(GetNodeChilds)<br>
+</font></b> procedure GetNodeChilds(Nodes: TTreeNodes; childOf::TTreeNode;
+childs:TList);<br>
+&nbsp;&nbsp;&nbsp; Nodes - структура узлов,
+отсноительно которой будут искаться &quot;дети&quot;<br>
+&nbsp;&nbsp;&nbsp; childOf - здесь указывается для
+какого узла искать &quot;детей&quot;.<br>
+&nbsp;&nbsp;&nbsp; childs - сюда сохраняется список
+указателей на &quot;детей&quot;(TTreeNode) узла childOf . Процедура не очищает перед своей работой список
+childs, так что если Вам нужно - очищайте его самостоятельно.<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font color="#000000" size="4"><a name="#59">Ищет в списке
+TListItems элемент с указанным заголовком</a> </font><font color="#008000" size="4">(GetItemByCaption)</font></b> <br>
+ function GetItemByCaption(Items: TListItems; cap:String; IgnoreCase:Boolean):TListItem;
+overload;<br>
+&nbsp;&nbsp;&nbsp; Items - список элементов, по
+которому будет производиться поиск.<br>
+&nbsp;&nbsp;&nbsp; cap - здесь указывается элемент с
+каким заголовком нужно найти.<br>
+&nbsp;&nbsp;&nbsp; IgnoreCase - если true, то при
+сравнивании не будет учитываться регистр
+букв.<br>
+&nbsp;&nbsp;&nbsp; result - указатель на элемент списка
+Items c заголовком cap, либо nil, если такого
+элемента не существует.</p>
+<p>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#60">Сохраняет строку переменной
+длины в стрим</a> <font color="#008000">(SaveStringToStream)<br>
+</font></font></b> procedure SaveStringToStream(St:String; Stream:TStream);<br>
+&nbsp;&nbsp;&nbsp; St - сохраняемая строка (размером
+до 65535 байт)<br>
+&nbsp;&nbsp;&nbsp; Stream - в это стрим будет дописана
+указанная строка.<br>
+<br>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#61">Загружает строку переменной
+длины из стрима</a> <font color="#008000">(ReadStringFromStream)<br>
+</font></font></b> function ReadStringFromStream(Stream:TStream):String;<br>
+&nbsp;&nbsp;&nbsp; Stream - из этого стрима будет
+загружена строка.<br>
+&nbsp;&nbsp;&nbsp; result - строка, прочитанная из Stream.</p>
+<p>
+описано : akVCLUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><br>
+</font></b></p>

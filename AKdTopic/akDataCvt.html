@@ -1,0 +1,78 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Преобразование
+различных данных</b></u></font></p>
+<hr>
+<hr noshade color="#0000FF" size="8">
+<p><b> <font size="4"><a name="#1">Преобразует строку вида
+&quot;10,5,20,30&quot; в TRECT<font color="#008000">  (StrToTRECT)<br>
+</font> </a>
+</font></b> function StrToTRECT(str:String; Sep:char = ','):TRect;<br>
+&nbsp;&nbsp;&nbsp; str - исходная строка.<br>
+&nbsp;&nbsp;&nbsp; Sep - разделитель данных<br>
+&nbsp;&nbsp;&nbsp; result - структура TRect.&nbsp; В случае
+ошибки функция вызовет исключение.</p>
+<p>описано : akDataCvt</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#2">Преобразует строку вида
+&quot;10,51&quot; в TPOINT<font color="#008000">  (StrToTPOINT)<br>
+</font> </a>
+</font></b> function StrToTPOINT(str:String; Sep:char = ','):TPoint;<br>
+&nbsp;&nbsp;&nbsp; str - исходная строка.<br>
+&nbsp;&nbsp;&nbsp; Sep - разделитель данных<br>
+&nbsp;&nbsp;&nbsp; result - структура TPoint.&nbsp; В случае
+ошибки функция вызовет исключение.</p>
+<p>описано : akDataCvt</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#3">Преобразует строку вида
+&quot;font_name,BIU,Size,Color&quot; в TFONT <font color="#008000">(StrToTFONT)<br>
+</font> </a>
+</font></b> procedure StrToTFONT(str:String; const Font:TFont; Sep:char = ',');<br>
+&nbsp;&nbsp;&nbsp; str - исходная строка.<br>
+&nbsp;&nbsp;&nbsp; Sep - разделитель данных<br>
+&nbsp;&nbsp;&nbsp; result - структура TFont.&nbsp; В случае
+ошибки функция вызовет исключение.</p>
+<p>описано : akDataCvt</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#4">Преобразует строку вида
+&quot;Black&quot; или &quot;#FFFFFF&quot; в TCOLOR <font color="#008000">(StrToTCOLOR)<br>
+</font> </a>
+</font></b> function StrToTCOLOR(str:String):TColor;<br>
+&nbsp;&nbsp;&nbsp; str - исходная строка.<br>
+&nbsp;&nbsp;&nbsp; result - значение цвета, указанного в
+str.&nbsp; В случае ошибки функция вызовет
+исключение.<br>
+<br>
+ Преобразует строку вида &quot;Black&quot; или &quot;#FFFFFF&quot;(Цвет в
+RGB) в TCOLOR.<br>
+ Возможные строковые значения смотрите в CSpColorNames и
+CColorNames.</p>
+<p>описано : akDataCvt</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#5">Преобразует массив в
+строку, разделяя элементы запятыми <font color="#008000">(ArrayToStr)<br>
+</font> </a>
+</font></b> function ArrayToStr(const ar: Array Of Integer):String; overload;<br>
+ function ArrayToStr(const ar: Array Of String):String; overload;<br>
+&nbsp;&nbsp;&nbsp; ar - преобразуемый массив.<br>
+&nbsp;&nbsp;&nbsp; result - строка, содержащая элементы
+массива ar, перечисленные через пробел.<br>
+<br>
+описано : akDataCvt</p>
+<hr noshade color="#0000FF">
+<p><b> <font size="4"><a name="#6">Преобразует строку в
+массив<font color="#008000">  (StrToArray)<br>
+</font> </a>
+</font></b> procedure StrToArray(str:String; ar:PIntArray; max:Integer);
+overload;<br>
+&nbsp;&nbsp;&nbsp; str - преобразуемая строка<br>
+&nbsp;&nbsp;&nbsp; ar - указатель на массив<br>
+&nbsp;&nbsp;&nbsp; max - максимальное количество элементов массива (Count-1)<br>
+<br>
+описано : akDataCvt</p>
+<hr noshade color="#0000FF">

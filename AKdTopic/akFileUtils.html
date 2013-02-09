@@ -1,0 +1,302 @@
+<META HTTP-EQUIV="Content-Type"
+    CONTENT="text/html; CHARSET=Windows-1251">
+
+<title></title>
+
+<body bgcolor="#CCFFFF">
+
+<p align="center"><font size="6"><u><b>Работа с файлами и
+файловой системой</b></u></font></p>
+<hr>
+<p>&nbsp;<b><font size="4"><a name="#1"><br>
+Как создать файлы с
+уникальными именами ?<br>
+</a></font></b>  Здесь удобнее всего использовать имя, состоящее из даты и времени, напри-<br>
+мер: 2310566160798 для 23:10:56 16-07-98. Если перевести это число в 32-чную<br>
+систему счисления, получим искомые восемь символов имени файла. Это хорошо<br>
+использовать, если программа создает много файлов, которые потом будут ис-<br>
+пользоваться. Если же нужно создать несколько временных файлов, то лучше<br>
+воспользоваться фyнкцией GetTempFileName.</p>
+<p>Также посмотрите на функцию <a href="#58">CreateTempFileName</a></p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#2">Как программно создать
+ярлык?<br>
+</a></font></b><b>uses</b> ShlObj, ComObj, ActiveX;<br>
+<b>procedure</b> CreateLink(<b>const</b> PathObj, PathLink, Desc, Param: string);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; IObject: IUnknown;<br>
+&nbsp;&nbsp;&nbsp; SLink: IShellLink;<br>
+&nbsp;&nbsp;&nbsp; PFile: IPersistFile;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; IObject := CreateComObject(CLSID_ShellLink);<br>
+&nbsp;&nbsp;&nbsp; SLink := IObject as IShellLink;<br>
+&nbsp;&nbsp;&nbsp; PFile := IObject as IPersistFile;<br>
+&nbsp;&nbsp;&nbsp; <b>with</b> SLink <b> do</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetArguments(PChar(Param));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SetDescription(PChar(Desc));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetPath(PChar(PathObj));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; PFile.Save(PWChar(WideString(PathLink)), FALSE);<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#3">Как поместить иконку на
+Рабочий стол ?<br>
+</a></font></b><b>uses</b> ComObj, ShlObj, ActiveX;<br>
+<b>
+procedure</b> CreateShortcut(<b>const</b> FilePath, ShortcutPath, Description,
+Params:string);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; obj: IUnknown;<br>
+&nbsp;&nbsp;&nbsp; isl: IShellLink;<br>
+&nbsp;&nbsp;&nbsp; ipf: IPersistFile;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; obj := CreateComObject(CLSID_ShellLink);<br>
+&nbsp;&nbsp;&nbsp; isl := obj as IShellLink;<br>
+&nbsp;&nbsp;&nbsp; ipf := obj as IPersistFile;<br>
+&nbsp;&nbsp;&nbsp; <b>with</b> isl <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetPath(PChar(FilePath));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetArguments(PChar(Params));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SetDescription(PChar(Description));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+&nbsp;&nbsp;&nbsp; ipf.Save(PWChar(WideString(ShortcutPath)), False);<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF">
+<p><font size="4"><b><a name="#4">Как пpинимать яpлыки пpи
+пеpетягивании их на контpол ?<br>
+<br>
+</a></b></font>  TForm1 = <b>class</b>(TForm)<br>
+  ...<br>
+<b>
+  private</b><br>
+&nbsp;&nbsp;&nbsp; <b>procedure</b> WMDropFiles(var M : TWMDropFiles); message WM_DROPFILES;<br>
+  ...<br>
+<b>end</b>;<br>
+<br>
+<b>
+var</b> Form1: TForm1;
+<br>
+<b>
+implementation</b>
+<br>
+<b>
+uses</b> StrUtils, ShellAPI, ComObj, ShlObj, ActiveX;;<br>
+<br>
+<b>
+procedure</b> TForm1.FormCreate(Sender: TObject);<br>
+<b>
+begin</b><br>
+  ...<br>
+  DragAcceptFiles(Handle, True);<br>
+  ...<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TForm1.FormDestroy(Sender: TObject);<br>
+<b>
+begin</b><br>
+  ...<br>
+  DragAcceptFiles(Handle, False);<br>
+  ...<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TForm1.WMDropFiles(<b>var</b> M : TWMDropFiles);<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; hDrop: Cardinal;<br>
+&nbsp;&nbsp;&nbsp; n: Integer;<br>
+&nbsp;&nbsp;&nbsp; s: string;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; hDrop := M.Drop;<br>
+&nbsp;&nbsp;&nbsp; n := DragQueryFile(hDrop, 0, nil, 0);<br>
+&nbsp;&nbsp;&nbsp; SetLength(s, n);<br>
+&nbsp;&nbsp;&nbsp; DragQueryFile(hDrop, 0, PChar(s), n + 1);<br>
+&nbsp;&nbsp;&nbsp; DragFinish(hDrop);<br>
+&nbsp;&nbsp;&nbsp; M.Result := 0;<br>
+&nbsp;&nbsp;&nbsp; FileOpen(s);<br>
+<b>end</b>;<br>
+<br>
+<b>
+procedure</b> TForm1.FileOpen(FileName: string);<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>if</b> CompareText(ExtractFileExt(FileName), '.lnk') = 0 <b>then</b>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FileName := ResolveShortcut(Application.Handle, FileName);<br>
+&nbsp;&nbsp;&nbsp; DocName := ExtractFileName(FileName);<br>
+&nbsp;&nbsp;&nbsp; Caption := Application.Title + ' - ' + DocName;<br>
+  ...<br>
+<b>end</b>;<br>
+<br>
+<b>
+function</b> ResolveShortcut(Wnd: HWND; ShortcutPath: string): string;<br>
+<b>
+var</b><br>
+&nbsp;&nbsp;&nbsp; obj: IUnknown;<br>
+&nbsp;&nbsp;&nbsp; isl: IShellLink;<br>
+&nbsp;&nbsp;&nbsp; ipf: IPersistFile;<br>
+&nbsp;&nbsp;&nbsp; pfd: TWin32FindDataA;<br>
+<b>
+begin</b><br>
+&nbsp;&nbsp;&nbsp; Result := '';<br>
+&nbsp;&nbsp;&nbsp; obj := CreateComObject(CLSID_ShellLink);<br>
+&nbsp;&nbsp;&nbsp; isl := obj as IShellLink;<br>
+&nbsp;&nbsp;&nbsp; ipf := obj as IPersistFile;<br>
+&nbsp;&nbsp;&nbsp; ipf.Load(PWChar(WideString(ShortcutPath)), STGM_READ);<br>
+&nbsp;&nbsp;&nbsp; <b>with</b> isl <b> do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>begin</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Resolve(Wnd, SLR_ANY_MATCH);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetLength(Result, MAX_PATH);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GetPath(PChar(Result), Length(Result), pfd, SLGP_UNCPRIORITY);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Result := PChar(Result);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>;</p>
+<hr noshade color="#0000FF" size="8">
+<p><b><font size="4"><a name="#51">Возвращает имя файла без
+расширения&nbsp;<font color="#008000">(GetFileNameWOExt)<br>
+</font></a></font></b> function GetFileNameWOExt(fn:String):String;<br>
+&nbsp;&nbsp;&nbsp; fn - имя файла<br>
+&nbsp;&nbsp;&nbsp; result - имя файла без разширения</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#52">Добавляет &quot;\&quot; к
+имени директории, если это нужно <font color="#008000">(GetDirectory)<br>
+</font></a></font></b> function GetDirectory(St:string):String;<br>
+&nbsp;&nbsp;&nbsp; st - имя директории<br>
+&nbsp;&nbsp;&nbsp; result - строка st, в конец которой
+добавлен символ &quot;\&quot;, если это
+необходимо.я</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#53">Удаляет букву диска от
+имени файла <font color="#008000">(GetRelativeDirectory)</font><br>
+</a></font></b> function GetRelativeDirectory(St:string):String;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; st - имя директории<br>
+&nbsp;&nbsp;&nbsp; result - относительный путь</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#54">Возвращает полный путь к
+файлу по его относительному пути <font color="#008000">(CompletePath)<br>
+</font></a></font></b> function CompletePath(fn, CurDir:String):String;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp; st - имя файла (например,
+&quot;myproject\file\myfile.exe&quot;)<br>
+&nbsp;&nbsp;&nbsp; CurDir - текущая директория&nbsp;<br>
+&nbsp;&nbsp;&nbsp; result -&nbsp; имя файла st с абсолютным
+путем к нему.</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#55">Удаляет из строки все
+двойные &quot;\&quot; и &quot;/&quot; <font color="#008000">(RepairPathName)</font></a></font></b><a name="#55"><br>
+</a> function RepairPathName(d1:String):String;<br>
+&nbsp;&nbsp;&nbsp; d1 - имя файла или директории<br>
+&nbsp;&nbsp;&nbsp; result -&nbsp; строка d1, из которой
+удалены все двойные &quot;\&quot; и &quot;/&quot;.<br>
+<br>
+<font color="#008000">пример : из строки "c:\\\\/tools\\txt" функция сделает
+&quot;c:\tools\txt&quot;</font></p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#56">Сравнивает два пути,
+игнорируя регистр букв и лишние &quot;\&quot;,
+&quot;/&quot;.</a> <font color="#008000">(CompareDirectoryes)<br>
+</font></font></b> function CompareDirectoryes(d1, d2: String):Boolean;<br>
+&nbsp;&nbsp;&nbsp; d1 - имя первой директории<br>
+&nbsp;&nbsp;&nbsp; d2 - имя второй директории<br>
+&nbsp;&nbsp;&nbsp; result - возвращает true, если имена
+директорий идентичны.</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#57">Создает файл, если
+таковой не существует <font color="#008000">(CreateFileIfNotExists)<br>
+</font></a></font></b> procedure CreateFileIfNotExists(fn: String);<br>
+&nbsp;&nbsp;&nbsp; fn - имя файла</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#58">Получить имя временного
+файла (без расширения) <font color="#008000">(CreateTempFileName)<br>
+</font></a></font></b> function CreateTempFileName: string;<br>
+&nbsp;&nbsp;&nbsp; result - случайное имя файла.</p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#59">Как получить список всех
+файлов во вложенных директориях ? <font color="#008000">(TCustomTreeFileList)</font></a></font></b><a name="#59"><br>
+<br>
+</a>В модуле akFileUtils есть класс TCustomTreeFileList.
+Сделайте наследника этого класс, перекрыв
+метод _Process, вызываемый при каждом найденном
+файле. Описание и пример приведены ниже :<br>
+<br>
+  TCustomTreeFileList = <b>class</b>(TObject)<br>
+<b>    private</b><br>
+<b>    protected</b><br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Перекройте этот метод, для получения информации о найденных файлах.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>procedure</b> _Process(FileName:String); <b>virtual</b>;
+<b>abstract</b>;<br>
+<b>    public<br>
+</b><font color="#008000">&nbsp;&nbsp;&nbsp; // Конструктор. В dir
+укажите название корневой директории
+поиска.<br>
+&nbsp;&nbsp;&nbsp; // в mask задайте маску искомых
+файлов.</font>&nbsp;&nbsp;&nbsp;&nbsp;<b><br>
+&nbsp;&nbsp;&nbsp; constructor</b> Create(dir:String; mask:String);<br>
+<font color="#008000">&nbsp;&nbsp;&nbsp; // Деструктор.<br>
+</font>&nbsp;&nbsp;&nbsp; <b>destructor</b> Destroy;<b> override;<br>
+</b><font color="#008000">&nbsp;&nbsp;&nbsp; // Вызовите этот
+метод для начала процесса поиска.</font><br>
+&nbsp;&nbsp;&nbsp; <b>procedure</b> ProcessFind;<br>
+<b>end</b>;<br>
+<font color="#008000"><br>
+<br>
+Пример :</font></p>
+<hr align="left" width="50%" color="#008000">
+<p><font color="#008000">TMyFileList = <b>class</b>(TCustomTreeFileList)<br>
+<b>protected</b><br>
+&nbsp;&nbsp;&nbsp; procedure _Process(FileName:String); <b>override</b>;<br>
+<b>end</b>;</font></p>
+<p><font color="#008000"><b>procedure</b> TMyFileList._Process(FileName:String);<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; Writeln(FileName);<br>
+<b>end</b>;<br>
+...<br>
+<b>begin</b><br>
+&nbsp;&nbsp;&nbsp; <b>with</b> TMyFileList.Create('c:\windows', '*.dll') <b>do</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>try</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ProcessFind;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>finally</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Free;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>end</b>;<br>
+<b>end</b>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font>&nbsp;</p>
+<hr align="left" width="50%" color="#008000">
+<p>
+описано : akFileUtils</p>
+<hr noshade color="#0000FF">
+<p><b><font size="4"><a name="#60">Как получить уникальное
+имя файла (типа &quot;Untitled-2.txt&quot;) ? <font color="#008000">(MakeUniqueFileName)</font></a><font color="#008000"><br>
+</font></font></b> function MakeUniqueFileName(Dir: String; Mask: String =
+'Untitled-#'): String;<br>
+<i> Возвращает уникальное имя файла с маской Mask для директории
+Dir. В маске должен присутствовать символ &quot;#&quot;, заменяемый в процессе трансляции уникальным числовым идентификатором.</i><br>
+&nbsp;&nbsp;&nbsp; dir - указывается директория для
+которой будет искаться уникальное имя
+файла.<br>
+&nbsp;&nbsp;&nbsp; mask - маска имени желаемого файла,
+символ &quot;#&quot; в ней будет заменяться на ID.<br>
+&nbsp;&nbsp;&nbsp; result - уникальное имя файла.<br>
+<br>
+<font color="#008000">
+Пример :<br>
+&nbsp;&nbsp;&nbsp; MakeUniqueFileName('c:\tools', 'NewFile-#.unq');<br>
+<br>
+Если в директории 'c:\tools' существует файл с
+именем 'NewFile-1.unq', то функция вернет значение
+&quot;NewFile-2.unq&quot;</font></p>
+<p>описано : akFileUtils</p>
+<hr noshade color="#0000FF">
