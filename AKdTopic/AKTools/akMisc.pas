@@ -56,7 +56,11 @@ function GetTimeDiff(d1, d2: TDateTime; d3, d4: TDateTime): TDateTime;
 
 implementation
 
+
+
 uses SysUtils, Classes, Math, akDataUtils;
+
+
 
 function GetFirstDayOfWeek: Integer;
 var m: Integer;
