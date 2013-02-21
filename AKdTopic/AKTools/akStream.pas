@@ -247,10 +247,10 @@ begin
   begin
     Result := nil;
     fParentPtrValid := true;
-    for i := 0 to Collection.Count - 1 do
+    for i := 0 to  Collection.Count - 1 do
     begin
       ti := TSafeCollectionItem(Collection.Items[i]);
-      if IsEqualGUID(ParentGUID, ti.GUID) then
+      if IsEqualGUID(ParentGUID,  ti.GUID) then
       begin
         fParentPtr := ti;
         Result := ti;
