@@ -12,6 +12,7 @@ type
     fParam: TWebBrowser;
     FProcessMode: Integer;
 
+    
     procedure SetParametersOfSelect(const Doc: IHTMLDocument2; FromSL: TStringList);
     procedure SetParametersOfInput(const Doc: IHTMLDocument2; FromSL: TStringList);
     procedure GetParametersOfSelect(const Doc: IHTMLDocument2; OutSL: TStringList);
